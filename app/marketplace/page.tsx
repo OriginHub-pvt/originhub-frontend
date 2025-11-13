@@ -1,104 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import IdeaCard, { Idea } from '@/components/IdeaCard';
 import PostIdeaModal from '@/components/PostIdeaModal';
-
-// Mock data - Replace with actual API call
-const mockIdeas: Idea[] = [
-  {
-    id: '1',
-    title: 'AI-Powered Food Waste Reduction Platform',
-    description: 'A smart platform that connects restaurants, grocery stores, and consumers to reduce food waste through AI-driven inventory management and donation matching.',
-    problem: 'Food waste is a massive global problem, with 1.3 billion tons of food wasted annually, causing environmental and economic damage.',
-    solution: 'An AI-powered platform that predicts food waste, matches surplus food with donation centers, and optimizes inventory management for businesses.',
-    marketSize: 'Large',
-    tags: ['AI', 'Sustainability', 'Food Tech', 'Social Impact'],
-    author: 'Sarah Johnson',
-    createdAt: new Date('2024-01-15'),
-    upvotes: 234,
-    views: 1200,
-    status: 'active',
-  },
-  {
-    id: '2',
-    title: 'Remote Team Wellness Assistant',
-    description: 'A comprehensive wellness platform designed for remote teams, offering mental health support, virtual team building, and productivity optimization tools.',
-    problem: 'Remote workers face isolation, burnout, and lack of work-life balance, leading to decreased productivity and mental health issues.',
-    solution: 'A platform providing personalized wellness programs, virtual team activities, and AI-driven stress management tools for remote teams.',
-    marketSize: 'Medium',
-    tags: ['Remote Work', 'Health Tech', 'SaaS', 'B2B'],
-    author: 'Mike Chen',
-    createdAt: new Date('2024-01-20'),
-    upvotes: 189,
-    views: 890,
-    status: 'validated',
-  },
-  {
-    id: '3',
-    title: 'Blockchain-Based Supply Chain Transparency',
-    description: 'A blockchain solution that provides end-to-end transparency in supply chains, helping consumers verify product authenticity and ethical sourcing.',
-    problem: 'Consumers lack visibility into supply chains, making it difficult to verify product authenticity, ethical sourcing, and environmental impact.',
-    solution: 'A blockchain platform that tracks products from origin to consumer, providing immutable records of authenticity, sourcing, and sustainability metrics.',
-    marketSize: 'Large',
-    tags: ['Blockchain', 'Supply Chain', 'Sustainability', 'B2B2C'],
-    author: 'Alex Rivera',
-    createdAt: new Date('2024-01-18'),
-    upvotes: 312,
-    views: 1500,
-    status: 'active',
-  },
-  {
-    id: '4',
-    title: 'Personalized Learning Path Generator',
-    description: 'An AI-driven educational platform that creates personalized learning paths for students based on their learning style, pace, and career goals.',
-    problem: 'Traditional education uses a one-size-fits-all approach, failing to accommodate individual learning styles and career aspirations.',
-    solution: 'An AI platform that analyzes learning patterns, creates customized curricula, and adapts in real-time to optimize student outcomes.',
-    marketSize: 'Medium',
-    tags: ['EdTech', 'AI', 'Personalization', 'B2C'],
-    author: 'Emily Wang',
-    createdAt: new Date('2024-01-22'),
-    upvotes: 156,
-    views: 670,
-    status: 'draft',
-  },
-  {
-    id: '5',
-    title: 'Smart Home Energy Optimization System',
-    description: 'An IoT-based energy management system that optimizes home energy consumption using AI, reducing costs and carbon footprint.',
-    problem: 'Homeowners waste energy due to inefficient heating, cooling, and appliance usage, leading to high costs and environmental impact.',
-    solution: 'An IoT system with AI algorithms that learns usage patterns and automatically optimizes energy consumption while maintaining comfort.',
-    marketSize: 'Large',
-    tags: ['IoT', 'Energy', 'AI', 'Smart Home'],
-    author: 'David Kim',
-    createdAt: new Date('2024-01-19'),
-    upvotes: 278,
-    views: 1100,
-    status: 'launched',
-  },
-  {
-    id: '6',
-    title: 'Mental Health Chatbot for Students',
-    description: 'A 24/7 AI-powered mental health chatbot specifically designed for students, providing instant support, resources, and crisis intervention.',
-    problem: 'Students face mental health challenges but often lack access to affordable, timely support, especially during crisis situations.',
-    solution: 'An AI chatbot that provides immediate mental health support, connects students with resources, and escalates to human professionals when needed.',
-    marketSize: 'Medium',
-    tags: ['Mental Health', 'AI', 'Education', 'Healthcare'],
-    author: 'Jessica Martinez',
-    createdAt: new Date('2024-01-21'),
-    upvotes: 201,
-    views: 950,
-    status: 'active',
-  },
-];
+import { apiClient } from '@/lib/api';
 
 export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'upvotes'>('newest');
-  const [ideas, setIdeas] = useState<Idea[]>(mockIdeas);
+  const [ideas, setIdeas] = useState<Idea[]>([]); // Start with empty array - only database data
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Extract all unique tags from ideas
   const allTags = useMemo(() => {
@@ -109,38 +24,139 @@ export default function MarketplacePage() {
     return Array.from(tags).sort();
   }, [ideas]);
 
-  // Handle new idea submission
-  const handlePostIdea = (ideaData: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status'>) => {
-    const newIdea: Idea = {
-      ...ideaData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      upvotes: 0,
-      views: 0,
-      status: 'draft',
-    };
-    setIdeas((prev) => [newIdea, ...prev]);
+  // Fetch ideas from backend API - only display database content
+  const fetchIdeas = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.getIdeas({
+        search: searchQuery || undefined,
+        tags: selectedTag ? [selectedTag] : undefined,
+        sort_by: sortBy,
+      });
+      
+      console.log('API Response:', response); // Debug log
+      console.log('Response type:', typeof response); // Debug log
+      console.log('Response keys:', response ? Object.keys(response) : 'null'); // Debug log
+      
+      // Handle different response structures from backend
+      // Expected format: { success: true, data: { ideas: [...] }, message: "..." }
+      let ideasData: unknown = null;
+      
+      // Try different possible response structures
+      if (Array.isArray(response)) {
+        // Response is directly an array
+        ideasData = response;
+      } else if (response && typeof response === 'object') {
+        // Response is an object - try common keys
+        const resp = response as Record<string, unknown>;
+        
+        // First check if data exists and is an object (nested structure)
+        if (resp.data && typeof resp.data === 'object' && !Array.isArray(resp.data)) {
+          // Handle nested structure: { success: true, data: { ideas: [...] } }
+          const dataObj = resp.data as Record<string, unknown>;
+          ideasData = dataObj.ideas || 
+                     dataObj.data || 
+                     dataObj.items || 
+                     dataObj.results ||
+                     dataObj.content ||
+                     null;
+        } else if (Array.isArray(resp.data)) {
+          // Handle: { success: true, data: [...] }
+          ideasData = resp.data;
+        } else {
+          // Try top-level keys
+          ideasData = resp.ideas || 
+                     resp.data || 
+                     resp.items || 
+                     resp.results ||
+                     resp.content ||
+                     null;
+        }
+      }
+      
+      console.log('Ideas Data:', ideasData); // Debug log
+      console.log('Is Array?', Array.isArray(ideasData)); // Debug log
+      console.log('Ideas Data type:', typeof ideasData); // Debug log
+      
+      if (Array.isArray(ideasData)) {
+        // Convert API response to Idea format
+        const formattedIdeas: Idea[] = ideasData.map((item: Record<string, unknown>, index: number) => ({
+          id: String(item.id || item._id || `temp-${Date.now()}-${index}`),
+          title: String(item.title || 'Untitled Idea'),
+          description: String(item.description || ''),
+          problem: String(item.problem || ''),
+          solution: String(item.solution || ''),
+          marketSize: (item.marketSize || item.market_size || 'Medium') as 'Small' | 'Medium' | 'Large',
+          tags: Array.isArray(item.tags) ? item.tags.map((t) => String(t)) : [],
+          author: String(item.author || item.author_name || 'Anonymous'),
+          createdAt: item.createdAt ? new Date(String(item.createdAt)) : 
+                     (item.created_at ? new Date(String(item.created_at)) : 
+                     (item.created ? new Date(String(item.created)) : new Date())),
+          upvotes: Number(item.upvotes || item.upvotes_count || item.upvote_count || 0),
+          views: Number(item.views || item.views_count || item.view_count || 0),
+          status: (item.status || 'draft') as 'draft' | 'active' | 'validated' | 'launched',
+        }));
+        console.log('Formatted Ideas:', formattedIdeas); // Debug log
+        console.log('Formatted Ideas Count:', formattedIdeas.length); // Debug log
+        // Only set ideas from database - no mock data fallback
+        setIdeas(formattedIdeas);
+      } else {
+        // If response structure is unexpected, log everything for debugging
+        console.error('Unexpected API response structure:', {
+          response,
+          responseType: typeof response,
+          isArray: Array.isArray(response),
+          keys: response && typeof response === 'object' ? Object.keys(response) : null,
+          ideasData,
+          ideasDataType: typeof ideasData,
+        });
+        setIdeas([]);
+        setError(`Unexpected response format from server. Received: ${typeof response}. Check browser console for full response details.`);
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching ideas from backend:', err);
+      // Don't use mock data - show error instead
+      setError('Failed to load ideas from the database. Please ensure the backend is running.');
+      setIdeas([]); // Set empty array on error
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Filter and sort ideas
+  // Fetch ideas on component mount
+  useEffect(() => {
+    fetchIdeas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refetch when search/filter changes
+  useEffect(() => {
+    fetchIdeas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedTag, sortBy]);
+
+  // Handle new idea submission
+  const handlePostIdea = async (_ideaData: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status'>) => {
+    try {
+      // The API call is already handled in PostIdeaModal
+      // After successful POST, refresh the ideas list from the database
+      await fetchIdeas();
+    } catch (err) {
+      console.error('Error refreshing ideas after adding new idea:', err);
+      // Don't add optimistic update - only show what's in the database
+    }
+  };
+
+  // Display ideas from backend
+  // Backend already handles search/filter/sort, so we just display what we get
   const filteredIdeas = useMemo(() => {
-    const filtered = ideas.filter((idea) => {
-      const matchesSearch =
-        searchQuery === '' ||
-        idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        idea.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        idea.problem.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        idea.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-      const matchesTag = selectedTag === null || idea.tags.includes(selectedTag);
-
-      return matchesSearch && matchesTag;
-    });
-
-    // Sort ideas (create a new array to avoid mutating)
-    return [...filtered].sort((a, b) => {
+    console.log('Displaying ideas. Total ideas from backend:', ideas.length); // Debug log
+    console.log('Ideas array:', ideas); // Debug log
+    
+    // Since backend already handles filtering, just return the ideas directly
+    // Only do minimal client-side sorting if backend doesn't sort
+    const sorted = [...ideas].sort((a, b) => {
       switch (sortBy) {
         case 'popular':
           return b.views - a.views;
@@ -151,7 +167,10 @@ export default function MarketplacePage() {
           return b.createdAt.getTime() - a.createdAt.getTime();
       }
     });
-  }, [ideas, searchQuery, selectedTag, sortBy]);
+    
+    console.log('Final ideas to display:', sorted.length); // Debug log
+    return sorted;
+  }, [ideas, sortBy]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -297,14 +316,47 @@ export default function MarketplacePage() {
           </p>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#14b8a6]"></div>
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+              Loading ideas...
+            </h3>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 mb-6">
+            <div className="flex items-center">
+              <svg
+                className="h-5 w-5 text-yellow-600 mr-2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-sm text-yellow-800">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Ideas Grid */}
-        {filteredIdeas.length > 0 ? (
+        {!isLoading && filteredIdeas.length > 0 && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredIdeas.map((idea) => (
               <IdeaCard key={idea.id} idea={idea} />
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredIdeas.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
             <svg
               className="mx-auto h-12 w-12 text-slate-400"

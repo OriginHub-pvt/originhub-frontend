@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { Idea } from './IdeaCard';
+import { apiClient } from '@/lib/api';
 
 interface PostIdeaModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -120,12 +122,11 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      onSubmit({
+      // Call backend API to add idea
+      const response = await apiClient.addIdea({
         title: formData.title.trim(),
         description: formData.description.trim(),
         problem: formData.problem.trim(),
@@ -134,6 +135,32 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
         tags: formData.tags,
         author: formData.author.trim(),
       });
+
+      // Call the onSubmit callback with the response data
+      // The response should contain the created idea with ID, timestamps, etc.
+      if (response.data || response.idea) {
+        const createdIdea = response.data || response.idea;
+        onSubmit({
+          title: createdIdea.title || formData.title.trim(),
+          description: createdIdea.description || formData.description.trim(),
+          problem: createdIdea.problem || formData.problem.trim(),
+          solution: createdIdea.solution || formData.solution.trim(),
+          marketSize: createdIdea.marketSize || formData.marketSize,
+          tags: createdIdea.tags || formData.tags,
+          author: createdIdea.author || formData.author.trim(),
+        });
+      } else {
+        // Fallback if backend returns different structure
+        onSubmit({
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          problem: formData.problem.trim(),
+          solution: formData.solution.trim(),
+          marketSize: formData.marketSize,
+          tags: formData.tags,
+          author: formData.author.trim(),
+        });
+      }
 
       // Reset form
       setFormData({
@@ -148,8 +175,23 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
       setTagInput('');
       setErrors({});
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting idea:', error);
+      // Handle error response
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+        if (axiosError.response?.data?.error) {
+          setSubmitError(axiosError.response.data.error);
+        } else if (axiosError.response?.data?.message) {
+          setSubmitError(axiosError.response.data.message);
+        } else {
+          setSubmitError('Failed to submit idea. Please try again.');
+        }
+      } else if (error instanceof Error) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError('Failed to submit idea. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -409,6 +451,26 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 Add relevant tags to help others find your idea (e.g., AI, SaaS, Healthcare)
               </p>
             </div>
+
+            {/* Error Message */}
+            {submitError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                <div className="flex items-center">
+                  <svg
+                    className="h-5 w-5 text-red-600 mr-2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-600">{submitError}</p>
+                </div>
+              </div>
+            )}
           </form>
         </div>
 
