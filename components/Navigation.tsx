@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/chat', label: 'Chat' },
-    { href: '/marketplace', label: 'Marketplace' },
-    { href: '/explore', label: 'Explore' },
-    { href: '/dashboard', label: 'Dashboard' },
+    { href: "/", label: "Home" },
+    { href: "/chat", label: "Chat" },
+    { href: "/marketplace", label: "Marketplace" },
+    { href: "/explore", label: "Explore" },
+    { href: "/dashboard", label: "Dashboard" },
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#0e3a5f] to-[#14b8a6]">
               <span className="text-xl font-bold text-white">OH</span>
             </div>
-            <span className="text-xl font-bold text-[#0e3a5f]">OriginHub</span>
+            <span className="text-xl font-bold text-white">OriginHub</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -38,8 +38,8 @@ export default function Navigation() {
                   href={link.href}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'text-[#14b8a6]'
-                      : 'text-slate-600 hover:text-[#0e3a5f]'
+                      ? "text-[#14b8a6]"
+                      : "text-slate-300 hover:text-white"
                   }`}
                 >
                   {link.label}
@@ -57,7 +57,7 @@ export default function Navigation() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+            className="md:hidden rounded-lg p-2 text-slate-300 hover:bg-slate-800"
             aria-label="Toggle menu"
           >
             <svg
@@ -80,7 +80,7 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 py-4 animate-fade-in">
+          <div className="md:hidden border-t border-slate-700 py-4 animate-fade-in">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -90,8 +90,8 @@ export default function Navigation() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`block px-3 py-2 text-base font-medium ${
                     isActive
-                      ? 'text-[#14b8a6]'
-                      : 'text-slate-600 hover:text-[#0e3a5f]'
+                      ? "text-[#14b8a6]"
+                      : "text-slate-300 hover:text-white"
                   }`}
                 >
                   {link.label}
@@ -111,4 +111,3 @@ export default function Navigation() {
     </nav>
   );
 }
-
