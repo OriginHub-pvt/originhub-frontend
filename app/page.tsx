@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Navigation from "@/components/Navigation";
 import { Vortex } from "@/components/ui/vortex";
-import { Highlight } from "@/components/ui/hero-highlight";
+import { Highlight, HeroHighlight } from "@/components/ui/hero-highlight";
 import { Button } from "@/components/ui/moving-border";
 
 export default function LandingPage() {
@@ -35,38 +35,55 @@ export default function LandingPage() {
               </p>
 
               {/* CTA Buttons */}
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <div className="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
                 <Button
                   as="a"
                   href="/chat"
-                  borderRadius="1.75rem"
-                  className="bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] text-white border-0 font-semibold"
-                  containerClassName="h-16"
-                  borderClassName="bg-gradient-to-r from-[#14b8a6] via-[#0e3a5f] to-[#14b8a6]"
+                  borderRadius="9999px"
+                  containerClassName="group/button relative h-[4.2rem] w-full max-w-[320px] bg-transparent"
+                  borderClassName="bg-[conic-gradient(at_top,_#14b8a6,_#0e3a5f,_#14b8a6)] opacity-70 blur-[2px]"
+                  className="flex w-full flex-col gap-1 rounded-full border border-white/10 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/40 px-6 text-left text-white shadow-[0_15px_45px_rgba(14,58,95,0.45)] transition-all duration-300 hover:shadow-[0_20px_55px_rgba(20,184,166,0.45)]"
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="text-xs font-medium uppercase tracking-[0.4em] text-teal-200/70">
+                    Live AI Guide
+                  </span>
+                  <span className="flex items-center justify-between text-lg font-semibold">
                     Find Your Solution
-                    <span className="inline-block transition-transform group-hover:translate-x-1">
-                      →
-                    </span>
                   </span>
                 </Button>
-                <Link
-                  href="/marketplace"
-                  className="rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0e3a5f] px-8 py-4 text-lg font-semibold text-white transition-all hover:from-[#0e3a5f] hover:to-[#14b8a6]"
-                >
-                  Explore Ideas
+
+                <Link href="/marketplace" className="w-full max-w-[320px]">
+                  <Button
+                    as="div"
+                    borderRadius="9999px"
+                    containerClassName="group/button relative h-[4.2rem] w-full bg-transparent"
+                    borderClassName="bg-[conic-gradient(at_top,_#0e3a5f,_#14b8a6,_#0e3a5f)] opacity-60 blur-[2px]"
+                    className="flex w-full flex-col items-center gap-1 rounded-full border border-white/10 bg-gradient-to-r from-slate-900/40 via-slate-900/70 to-slate-900/90 px-6 text-center text-white shadow-[0_15px_45px_rgba(2,6,23,0.6)] transition-all duration-300 hover:shadow-[0_20px_55px_rgba(14,58,95,0.45)]"
+                  >
+                    <span className="text-xs font-medium uppercase tracking-[0.35em] text-teal-100/70">
+                      Idea Vault
+                    </span>
+                    <span className="flex items-center justify-center gap-2 text-lg font-semibold">
+                      Explore Ideas
+                    </span>
+                  </Button>
                 </Link>
               </div>
-              <div className="mt-22">
-                <h3 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-bold bg-gradient-to-r from-[#0e3a5f] via-[#14b8a6] to-[#0e3a5f] bg-clip-text text-transparent">
+              <div className="mt-22 pb-4">
+                <h3 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-bold leading-[1.1] bg-gradient-to-r from-[#0e3a5f] via-[#14b8a6] to-[#0e3a5f] bg-clip-text text-transparent">
                   OriginHub
                 </h3>
               </div>
             </div>
+          </div>
+        </Vortex>
+      </section>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+      <HeroHighlight containerClassName="w-full flex-col items-stretch justify-start bg-slate-950 px-0 py-16 sm:py-20 lg:py-24">
+        <div className="w-full space-y-20">
+          {/* Stats */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+            <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-3">
               <div className="rounded-xl bg-slate-800/80 backdrop-blur-sm p-6 shadow-sm border border-slate-700">
                 <div className="text-3xl font-bold text-[#14b8a6]">1,200+</div>
                 <div className="mt-2 text-sm text-slate-400">
@@ -86,31 +103,200 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </Vortex>
-      </section>
+          </section>
 
-      {/* How It Works Section */}
-      <section className="w-full px-4 py-20 sm:px-6 lg:px-8 xl:px-12 bg-slate-900">
-        <div className="w-full">
-          <div className="w-full text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Here&apos;s How It Works For You
-            </h2>
-            <p className="mt-4 text-lg text-slate-300 sm:text-xl lg:text-2xl">
-              Two simple paths to get what you need
-            </p>
-          </div>
+          {/* How It Works Section */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+            <div className="w-full">
+              <div className="w-full text-center mb-16">
+                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                  Here&apos;s How It Works For You
+                </h2>
+                <p className="mt-4 text-lg text-slate-300 sm:text-xl lg:text-2xl">
+                  Two simple paths to get what you need
+                </p>
+              </div>
 
-          <div className="w-full">
-            {/* Main Flow */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 w-full">
-              {/* Left: Search Flow */}
-              <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0e3a5f]/20">
+              <div className="w-full">
+                {/* Main Flow */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 w-full">
+                  {/* Left: Search Flow */}
+                  <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0e3a5f]/20">
+                        <svg
+                          className="w-6 h-6 text-[#14b8a6]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl lg:text-3xl font-semibold text-white">
+                        Start by Searching
+                      </h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          1
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          Tell us about your problem or the new technology
+                          you&apos;re curious about
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          2
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          We search our database for existing startups,
+                          software, or tech that solves exactly what you need
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          3
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          If we find a solution, you&apos;re all set! If not, we
+                          automatically turn your problem into a startup idea
+                          for the marketplace
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Marketplace Flow */}
+                  <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#14b8a6]/20">
+                        <svg
+                          className="w-6 h-6 text-[#14b8a6]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl lg:text-3xl font-semibold text-white">
+                        Join the Marketplace
+                      </h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          1
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          Browse through startup ideas that are waiting to be
+                          solved by innovators like you
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          2
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          Pick an idea that excites you and collaborate with
+                          others to build the solution together
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
+                          3
+                        </div>
+                        <p className="text-slate-300 text-base lg:text-lg">
+                          Have your own brilliant idea? Post it directly to the
+                          marketplace and watch the community bring it to life
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Decision Flow Diagram */}
+                <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700 w-full">
+                  <h3 className="text-xl lg:text-2xl font-semibold text-white mb-8 text-center">
+                    Your Journey, Simplified
+                  </h3>
+                  <div className="flex flex-col items-center gap-4 w-full">
+                    <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
+                      <p className="text-white font-medium text-lg lg:text-xl">
+                        You have a problem that needs solving
+                      </p>
+                    </div>
+                    <div className="text-[#14b8a6] text-3xl">↓</div>
+                    <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
+                      <p className="text-white font-medium text-lg lg:text-xl">
+                        You search for existing solutions
+                      </p>
+                    </div>
+                    <div className="text-[#14b8a6] text-3xl">↓</div>
+                    <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="rounded-lg bg-green-500/20 border border-green-500/50 p-6 text-center">
+                        <p className="text-green-400 font-medium text-base lg:text-lg">
+                          Solution Found
+                        </p>
+                        <p className="text-slate-400 text-sm mt-2">
+                          Use the existing startup or software
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-[#14b8a6]/20 border border-[#14b8a6]/50 p-6 text-center">
+                        <p className="text-[#14b8a6] font-medium text-base lg:text-lg">
+                          No Solution Yet
+                        </p>
+                        <p className="text-slate-400 text-sm mt-2">
+                          We convert it into a startup idea for you
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-[#14b8a6] text-3xl">↓</div>
+                    <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
+                      <p className="text-white font-medium text-lg lg:text-xl">
+                        Your idea goes to the marketplace
+                      </p>
+                      <p className="text-slate-400 text-sm mt-2">
+                        Others can discover it and help you solve it
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Key Features Section */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+            <div className="w-full">
+              <div className="w-full text-center mb-16">
+                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                  Everything You Need, All in One Place
+                </h2>
+                <p className="mt-4 text-lg text-slate-300 sm:text-xl lg:text-2xl">
+                  Discover what you can do on OriginHub
+                </p>
+              </div>
+
+              <div className="w-full grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {/* Feature 1 */}
+                <div className="group rounded-2xl bg-slate-900 p-8 lg:p-10 shadow-sm border border-slate-700 transition-all hover:shadow-lg hover:border-[#14b8a6]/50 hover:scale-105">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#0e3a5f]/20 mb-4">
                     <svg
-                      className="w-6 h-6 text-[#14b8a6]"
+                      className="w-8 h-8 text-[#14b8a6]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -123,146 +309,49 @@ export default function LandingPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-2xl lg:text-3xl font-semibold text-white">
-                    Start by Searching
+                  <h3 className="text-xl lg:text-2xl font-semibold text-white mb-3">
+                    Search for Solutions
                   </h3>
+                  <p className="text-slate-400 text-base lg:text-lg">
+                    Find existing startups, software, or cutting-edge technology
+                    that solves your specific problem right now.
+                  </p>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      1
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      Tell us about your problem or the new technology
-                      you&apos;re curious about
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      2
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      We search our database for existing startups, software, or
-                      tech that solves exactly what you need
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      3
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      If we find a solution, you&apos;re all set! If not, we
-                      automatically turn your problem into a startup idea for
-                      the marketplace
-                    </p>
-                  </div>
-                </div>
+                ...
               </div>
+            </div>
+          </section>
 
-              {/* Right: Marketplace Flow */}
-              <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#14b8a6]/20">
-                    <svg
-                      className="w-6 h-6 text-[#14b8a6]"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl lg:text-3xl font-semibold text-white">
-                    Join the Marketplace
-                  </h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      1
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      Browse through startup ideas that are waiting to be solved
-                      by innovators like you
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      2
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      Pick an idea that excites you and collaborate with others
-                      to build the solution together
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center text-white text-xs font-bold">
-                      3
-                    </div>
-                    <p className="text-slate-300 text-base lg:text-lg">
-                      Have your own brilliant idea? Post it directly to the
-                      marketplace and watch the community bring it to life
-                    </p>
-                  </div>
+          {/* CTA Section */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+            <div className="w-full">
+              <div className="rounded-2xl bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-8 py-16 lg:px-16 lg:py-20 text-center shadow-xl">
+                <h2 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+                  Ready to Get Started?
+                </h2>
+                <p className="mt-4 text-xl text-white/90 lg:text-2xl">
+                  Find your solution or create the next big startup idea. Your
+                  journey starts here.
+                </p>
+                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <Link
+                    href="/chat"
+                    className="rounded-xl bg-white px-8 py-4 lg:px-12 lg:py-5 text-lg lg:text-xl font-semibold text-[#0e3a5f] transition-all hover:scale-105 hover:shadow-lg"
+                  >
+                    Find Your Solution
+                  </Link>
+                  <Link
+                    href="/marketplace"
+                    className="rounded-xl border-2 border-white px-8 py-4 lg:px-12 lg:py-5 text-lg lg:text-xl font-semibold text-white transition-all hover:bg-white hover:text-[#0e3a5f]"
+                  >
+                    Explore Marketplace
+                  </Link>
                 </div>
               </div>
             </div>
-
-            {/* Decision Flow Diagram */}
-            <div className="rounded-2xl bg-slate-800 p-8 lg:p-12 border border-slate-700 w-full">
-              <h3 className="text-xl lg:text-2xl font-semibold text-white mb-8 text-center">
-                Your Journey, Simplified
-              </h3>
-              <div className="flex flex-col items-center gap-4 w-full">
-                <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
-                  <p className="text-white font-medium text-lg lg:text-xl">
-                    You have a problem that needs solving
-                  </p>
-                </div>
-                <div className="text-[#14b8a6] text-3xl">↓</div>
-                <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
-                  <p className="text-white font-medium text-lg lg:text-xl">
-                    You search for existing solutions
-                  </p>
-                </div>
-                <div className="text-[#14b8a6] text-3xl">↓</div>
-                <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="rounded-lg bg-green-500/20 border border-green-500/50 p-6 text-center">
-                    <p className="text-green-400 font-medium text-base lg:text-lg">
-                      Solution Found
-                    </p>
-                    <p className="text-slate-400 text-sm mt-2">
-                      Use the existing startup or software
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-[#14b8a6]/20 border border-[#14b8a6]/50 p-6 text-center">
-                    <p className="text-[#14b8a6] font-medium text-base lg:text-lg">
-                      No Solution Yet
-                    </p>
-                    <p className="text-slate-400 text-sm mt-2">
-                      We convert it into a startup idea for you
-                    </p>
-                  </div>
-                </div>
-                <div className="text-[#14b8a6] text-3xl">↓</div>
-                <div className="w-full max-w-2xl rounded-lg bg-slate-900 p-6 border border-slate-700 text-center">
-                  <p className="text-white font-medium text-lg lg:text-xl">
-                    Your idea goes to the marketplace
-                  </p>
-                  <p className="text-slate-400 text-sm mt-2">
-                    Others can discover it and help you solve it
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
-      </section>
+      </HeroHighlight>
 
       {/* Key Features Section */}
       <section className="w-full px-4 py-20 sm:px-6 lg:px-8 xl:px-12 bg-slate-800">
