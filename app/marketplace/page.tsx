@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import Navigation from '@/components/Navigation';
-import IdeaCard, { Idea } from '@/components/IdeaCard';
-import PostIdeaModal from '@/components/PostIdeaModal';
-import { apiClient } from '@/lib/api';
+import { useState, useMemo, useEffect } from "react";
+import Navigation from "@/components/Navigation";
+import IdeaCard, { Idea } from "@/components/IdeaCard";
+import PostIdeaModal from "@/components/PostIdeaModal";
+import { apiClient } from "@/lib/api";
 
 export default function MarketplacePage() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'upvotes'>('newest');
+  const [sortBy, setSortBy] = useState<"newest" | "popular" | "upvotes">(
+    "newest"
+  );
   const [ideas, setIdeas] = useState<Idea[]>([]); // Start with empty array - only database data
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,90 +36,122 @@ export default function MarketplacePage() {
         tags: selectedTag ? [selectedTag] : undefined,
         sort_by: sortBy,
       });
-      
-      console.log('API Response:', response); // Debug log
-      console.log('Response type:', typeof response); // Debug log
-      console.log('Response keys:', response ? Object.keys(response) : 'null'); // Debug log
-      
+
+      console.log("API Response:", response); // Debug log
+      console.log("Response type:", typeof response); // Debug log
+      console.log("Response keys:", response ? Object.keys(response) : "null"); // Debug log
+
       // Handle different response structures from backend
       // Expected format: { success: true, data: { ideas: [...] }, message: "..." }
       let ideasData: unknown = null;
-      
+
       // Try different possible response structures
       if (Array.isArray(response)) {
         // Response is directly an array
         ideasData = response;
-      } else if (response && typeof response === 'object') {
+      } else if (response && typeof response === "object") {
         // Response is an object - try common keys
         const resp = response as Record<string, unknown>;
-        
+
         // First check if data exists and is an object (nested structure)
-        if (resp.data && typeof resp.data === 'object' && !Array.isArray(resp.data)) {
+        if (
+          resp.data &&
+          typeof resp.data === "object" &&
+          !Array.isArray(resp.data)
+        ) {
           // Handle nested structure: { success: true, data: { ideas: [...] } }
           const dataObj = resp.data as Record<string, unknown>;
-          ideasData = dataObj.ideas || 
-                     dataObj.data || 
-                     dataObj.items || 
-                     dataObj.results ||
-                     dataObj.content ||
-                     null;
+          ideasData =
+            dataObj.ideas ||
+            dataObj.data ||
+            dataObj.items ||
+            dataObj.results ||
+            dataObj.content ||
+            null;
         } else if (Array.isArray(resp.data)) {
           // Handle: { success: true, data: [...] }
           ideasData = resp.data;
         } else {
           // Try top-level keys
-          ideasData = resp.ideas || 
-                     resp.data || 
-                     resp.items || 
-                     resp.results ||
-                     resp.content ||
-                     null;
+          ideasData =
+            resp.ideas ||
+            resp.data ||
+            resp.items ||
+            resp.results ||
+            resp.content ||
+            null;
         }
       }
-      
-      console.log('Ideas Data:', ideasData); // Debug log
-      console.log('Is Array?', Array.isArray(ideasData)); // Debug log
-      console.log('Ideas Data type:', typeof ideasData); // Debug log
-      
+
+      console.log("Ideas Data:", ideasData); // Debug log
+      console.log("Is Array?", Array.isArray(ideasData)); // Debug log
+      console.log("Ideas Data type:", typeof ideasData); // Debug log
+
       if (Array.isArray(ideasData)) {
         // Convert API response to Idea format
-        const formattedIdeas: Idea[] = ideasData.map((item: Record<string, unknown>, index: number) => ({
-          id: String(item.id || item._id || `temp-${Date.now()}-${index}`),
-          title: String(item.title || 'Untitled Idea'),
-          description: String(item.description || ''),
-          problem: String(item.problem || ''),
-          solution: String(item.solution || ''),
-          marketSize: (item.marketSize || item.market_size || 'Medium') as 'Small' | 'Medium' | 'Large',
-          tags: Array.isArray(item.tags) ? item.tags.map((t) => String(t)) : [],
-          author: String(item.author || item.author_name || 'Anonymous'),
-          createdAt: item.createdAt ? new Date(String(item.createdAt)) : 
-                     (item.created_at ? new Date(String(item.created_at)) : 
-                     (item.created ? new Date(String(item.created)) : new Date())),
-          upvotes: Number(item.upvotes || item.upvotes_count || item.upvote_count || 0),
-          views: Number(item.views || item.views_count || item.view_count || 0),
-          status: (item.status || 'draft') as 'draft' | 'active' | 'validated' | 'launched',
-        }));
-        console.log('Formatted Ideas:', formattedIdeas); // Debug log
-        console.log('Formatted Ideas Count:', formattedIdeas.length); // Debug log
+        const formattedIdeas: Idea[] = ideasData.map(
+          (item: Record<string, unknown>, index: number) => ({
+            id: String(item.id || item._id || `temp-${Date.now()}-${index}`),
+            title: String(item.title || "Untitled Idea"),
+            description: String(item.description || ""),
+            problem: String(item.problem || ""),
+            solution: String(item.solution || ""),
+            marketSize: (item.marketSize || item.market_size || "Medium") as
+              | "Small"
+              | "Medium"
+              | "Large",
+            tags: Array.isArray(item.tags)
+              ? item.tags.map((t) => String(t))
+              : [],
+            author: String(item.author || item.author_name || "Anonymous"),
+            createdAt: item.createdAt
+              ? new Date(String(item.createdAt))
+              : item.created_at
+              ? new Date(String(item.created_at))
+              : item.created
+              ? new Date(String(item.created))
+              : new Date(),
+            upvotes: Number(
+              item.upvotes || item.upvotes_count || item.upvote_count || 0
+            ),
+            views: Number(
+              item.views || item.views_count || item.view_count || 0
+            ),
+            status: (item.status || "draft") as
+              | "draft"
+              | "active"
+              | "validated"
+              | "launched",
+          })
+        );
+        console.log("Formatted Ideas:", formattedIdeas); // Debug log
+        console.log("Formatted Ideas Count:", formattedIdeas.length); // Debug log
         // Only set ideas from database - no mock data fallback
         setIdeas(formattedIdeas);
       } else {
         // If response structure is unexpected, log everything for debugging
-        console.error('Unexpected API response structure:', {
+        console.error("Unexpected API response structure:", {
           response,
           responseType: typeof response,
           isArray: Array.isArray(response),
-          keys: response && typeof response === 'object' ? Object.keys(response) : null,
+          keys:
+            response && typeof response === "object"
+              ? Object.keys(response)
+              : null,
           ideasData,
           ideasDataType: typeof ideasData,
         });
         setIdeas([]);
-        setError(`Unexpected response format from server. Received: ${typeof response}. Check browser console for full response details.`);
+        setError(
+          `Unexpected response format from server. Received: ${typeof response}. Check browser console for full response details.`
+        );
       }
     } catch (err: unknown) {
-      console.error('Error fetching ideas from backend:', err);
+      console.error("Error fetching ideas from backend:", err);
       // Don't use mock data - show error instead
-      setError('Failed to load ideas from the database. Please ensure the backend is running.');
+      setError(
+        "Failed to load ideas from the database. Please ensure the backend is running."
+      );
       setIdeas([]); // Set empty array on error
     } finally {
       setIsLoading(false);
@@ -137,13 +171,15 @@ export default function MarketplacePage() {
   }, [searchQuery, selectedTag, sortBy]);
 
   // Handle new idea submission
-  const handlePostIdea = async (_ideaData: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status'>) => {
+  const handlePostIdea = async (
+    _ideaData: Omit<Idea, "id" | "createdAt" | "upvotes" | "views" | "status">
+  ) => {
     try {
       // The API call is already handled in PostIdeaModal
       // After successful POST, refresh the ideas list from the database
       await fetchIdeas();
     } catch (err) {
-      console.error('Error refreshing ideas after adding new idea:', err);
+      console.error("Error refreshing ideas after adding new idea:", err);
       // Don't add optimistic update - only show what's in the database
     }
   };
@@ -151,24 +187,24 @@ export default function MarketplacePage() {
   // Display ideas from backend
   // Backend already handles search/filter/sort, so we just display what we get
   const filteredIdeas = useMemo(() => {
-    console.log('Displaying ideas. Total ideas from backend:', ideas.length); // Debug log
-    console.log('Ideas array:', ideas); // Debug log
-    
+    console.log("Displaying ideas. Total ideas from backend:", ideas.length); // Debug log
+    console.log("Ideas array:", ideas); // Debug log
+
     // Since backend already handles filtering, just return the ideas directly
     // Only do minimal client-side sorting if backend doesn't sort
     const sorted = [...ideas].sort((a, b) => {
       switch (sortBy) {
-        case 'popular':
+        case "popular":
           return b.views - a.views;
-        case 'upvotes':
+        case "upvotes":
           return b.upvotes - a.upvotes;
-        case 'newest':
+        case "newest":
         default:
           return b.createdAt.getTime() - a.createdAt.getTime();
       }
     });
-    
-    console.log('Final ideas to display:', sorted.length); // Debug log
+
+    console.log("Final ideas to display:", sorted.length); // Debug log
     return sorted;
   }, [ideas, sortBy]);
 
@@ -185,7 +221,8 @@ export default function MarketplacePage() {
                 Idea Marketplace
               </h1>
               <p className="mt-4 text-lg text-slate-600">
-                Discover innovative startup ideas generated by our AI and community
+                Discover innovative startup ideas generated by our AI and
+                community
               </p>
             </div>
             <button
@@ -232,7 +269,7 @@ export default function MarketplacePage() {
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
                 >
                   <svg
@@ -255,13 +292,15 @@ export default function MarketplacePage() {
           <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
             {/* Tags Filter */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-slate-700">Filter by tag:</span>
+              <span className="text-sm font-medium text-slate-700">
+                Filter by tag:
+              </span>
               <button
                 onClick={() => setSelectedTag(null)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   selectedTag === null
-                    ? 'bg-[#14b8a6] text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? "bg-[#14b8a6] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 All
@@ -269,11 +308,13 @@ export default function MarketplacePage() {
               {allTags.map((tag) => (
                 <button
                   key={tag}
-                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                  onClick={() =>
+                    setSelectedTag(tag === selectedTag ? null : tag)
+                  }
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     selectedTag === tag
-                      ? 'bg-[#14b8a6] text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? "bg-[#14b8a6] text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
                   {tag}
@@ -283,11 +324,13 @@ export default function MarketplacePage() {
 
             {/* Sort By */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-slate-700">Sort by:</span>
+              <span className="text-sm font-medium text-slate-700">
+                Sort by:
+              </span>
               <select
                 value={sortBy}
                 onChange={(e) =>
-                  setSortBy(e.target.value as 'newest' | 'popular' | 'upvotes')
+                  setSortBy(e.target.value as "newest" | "popular" | "upvotes")
                 }
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 focus:border-[#14b8a6] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/20"
               >
@@ -305,14 +348,13 @@ export default function MarketplacePage() {
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-slate-600">
-            Showing <span className="font-semibold text-slate-900">{filteredIdeas.length}</span>{' '}
-            {filteredIdeas.length === 1 ? 'idea' : 'ideas'}
-            {searchQuery && (
-              <span> for &quot;{searchQuery}&quot;</span>
-            )}
-            {selectedTag && (
-              <span> tagged &quot;{selectedTag}&quot;</span>
-            )}
+            Showing{" "}
+            <span className="font-semibold text-slate-900">
+              {filteredIdeas.length}
+            </span>{" "}
+            {filteredIdeas.length === 1 ? "idea" : "ideas"}
+            {searchQuery && <span> for &quot;{searchQuery}&quot;</span>}
+            {selectedTag && <span> tagged &quot;{selectedTag}&quot;</span>}
           </p>
         </div>
 
@@ -388,4 +430,3 @@ export default function MarketplacePage() {
     </div>
   );
 }
-
