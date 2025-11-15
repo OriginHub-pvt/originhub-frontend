@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Navigation from "@/components/Navigation";
 import IdeaCard, { Idea } from "@/components/IdeaCard";
 import PostIdeaModal from "@/components/PostIdeaModal";
 import { apiClient } from "@/lib/api";
@@ -230,9 +229,7 @@ export default function MarketplacePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <Navigation />
-
+    <div className="flex h-full flex-col gap-10 overflow-hidden">
       {/* Header Section */}
       <div className="relative border-b border-slate-700 bg-slate-800 overflow-hidden">
         <Spotlight
