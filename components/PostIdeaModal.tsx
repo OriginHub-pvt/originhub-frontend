@@ -1,38 +1,46 @@
-'use client';
+"use client";
 
-import { useState, FormEvent, useEffect } from 'react';
-import { Idea } from './IdeaCard';
-import { apiClient } from '@/lib/api';
+import { useState, FormEvent, useEffect } from "react";
+import { Idea } from "./IdeaCard";
+import { apiClient } from "@/lib/api";
 
 interface PostIdeaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (idea: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status'>) => void;
+  onSubmit: (
+    idea: Omit<Idea, "id" | "createdAt" | "upvotes" | "views" | "status">
+  ) => void;
 }
 
-export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaModalProps) {
+export default function PostIdeaModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: PostIdeaModalProps) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    problem: '',
-    solution: '',
-    marketSize: 'Medium' as 'Small' | 'Medium' | 'Large',
+    title: "",
+    description: "",
+    problem: "",
+    solution: "",
+    marketSize: "Medium" as "Small" | "Medium" | "Large",
     tags: [] as string[],
-    author: '',
+    author: "",
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -42,7 +50,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
         ...prev,
         tags: [...prev.tags, tagInput.trim()],
       }));
-      setTagInput('');
+      setTagInput("");
     }
   };
 
@@ -54,7 +62,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
   };
 
   const handleTagInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddTag();
     }
@@ -63,51 +71,51 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
   // Handle ESC key to close modal
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = "Title is required";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = "Description is required";
     }
 
     if (!formData.problem.trim()) {
-      newErrors.problem = 'Problem statement is required';
+      newErrors.problem = "Problem statement is required";
     }
 
     if (!formData.solution.trim()) {
-      newErrors.solution = 'Solution description is required';
+      newErrors.solution = "Solution description is required";
     }
 
     if (!formData.author.trim()) {
-      newErrors.author = 'Author name is required';
+      newErrors.author = "Author name is required";
     }
 
     if (formData.tags.length === 0) {
-      newErrors.tags = 'At least one tag is required';
+      newErrors.tags = "At least one tag is required";
     }
 
     setErrors(newErrors);
@@ -164,33 +172,35 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
 
       // Reset form
       setFormData({
-        title: '',
-        description: '',
-        problem: '',
-        solution: '',
-        marketSize: 'Medium',
+        title: "",
+        description: "",
+        problem: "",
+        solution: "",
+        marketSize: "Medium",
         tags: [],
-        author: '',
+        author: "",
       });
-      setTagInput('');
+      setTagInput("");
       setErrors({});
       onClose();
     } catch (error: unknown) {
-      console.error('Error submitting idea:', error);
+      console.error("Error submitting idea:", error);
       // Handle error response
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { error?: string; message?: string } };
+        };
         if (axiosError.response?.data?.error) {
           setSubmitError(axiosError.response.data.error);
         } else if (axiosError.response?.data?.message) {
           setSubmitError(axiosError.response.data.message);
         } else {
-          setSubmitError('Failed to submit idea. Please try again.');
+          setSubmitError("Failed to submit idea. Please try again.");
         }
       } else if (error instanceof Error) {
         setSubmitError(error.message);
       } else {
-        setSubmitError('Failed to submit idea. Please try again.');
+        setSubmitError("Failed to submit idea. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -208,7 +218,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
       />
 
       {/* Modal */}
-      <div className="relative z-50 w-full max-w-3xl max-h-[90vh] mx-4 bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+      <div className="relative z-50 mx-4 max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950 text-white shadow-[0_25px_120px_rgba(2,6,23,0.9)] animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-6 py-4">
           <h2 className="text-2xl font-bold text-white">Post a New Idea</h2>
@@ -232,13 +242,13 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-6 py-6">
+        <div className="max-h-[calc(90vh-140px)] overflow-y-auto px-6 py-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="mb-2 block text-sm font-medium text-white/70"
               >
                 Idea Title <span className="text-red-500">*</span>
               </label>
@@ -249,10 +259,10 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter a catchy title for your idea..."
-                className={`w-full rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                   errors.title
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                    ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                    : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                 }`}
               />
               {errors.title && (
@@ -264,7 +274,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="mb-2 block text-sm font-medium text-white/70"
               >
                 Description <span className="text-red-500">*</span>
               </label>
@@ -275,14 +285,16 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 onChange={handleChange}
                 rows={3}
                 placeholder="Briefly describe your startup idea..."
-                className={`w-full rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors resize-none ${
+                className={`w-full resize-none rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                   errors.description
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                    ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                    : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                 }`}
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.description}
+                </p>
               )}
             </div>
 
@@ -290,7 +302,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
             <div>
               <label
                 htmlFor="problem"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="mb-2 block text-sm font-medium text-white/70"
               >
                 Problem Statement <span className="text-red-500">*</span>
               </label>
@@ -301,10 +313,10 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 onChange={handleChange}
                 rows={4}
                 placeholder="Describe the real-world problem your idea solves..."
-                className={`w-full rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors resize-none ${
+                className={`w-full resize-none rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                   errors.problem
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                    ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                    : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                 }`}
               />
               {errors.problem && (
@@ -316,7 +328,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
             <div>
               <label
                 htmlFor="solution"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="mb-2 block text-sm font-medium text-white/70"
               >
                 Solution <span className="text-red-500">*</span>
               </label>
@@ -327,10 +339,10 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 onChange={handleChange}
                 rows={4}
                 placeholder="Explain how your idea solves the problem..."
-                className={`w-full rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors resize-none ${
+                className={`w-full resize-none rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                   errors.solution
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                    ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                    : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                 }`}
               />
               {errors.solution && (
@@ -343,7 +355,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
               <div>
                 <label
                   htmlFor="marketSize"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="mb-2 block text-sm font-medium text-white/70"
                 >
                   Market Size
                 </label>
@@ -352,7 +364,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                   name="marketSize"
                   value={formData.marketSize}
                   onChange={handleChange}
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[#14b8a6] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/20 transition-colors"
+                  className="w-full rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white transition-colors focus:border-[#14b8a6] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/20"
                 >
                   <option value="Small">Small</option>
                   <option value="Medium">Medium</option>
@@ -363,7 +375,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
               <div>
                 <label
                   htmlFor="author"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="mb-2 block text-sm font-medium text-white/70"
                 >
                   Your Name <span className="text-red-500">*</span>
                 </label>
@@ -374,10 +386,10 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                   value={formData.author}
                   onChange={handleChange}
                   placeholder="Enter your name..."
-                  className={`w-full rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                     errors.author
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                      ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                      : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                   }`}
                 />
                 {errors.author && (
@@ -390,7 +402,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
             <div>
               <label
                 htmlFor="tags"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="mb-2 block text-sm font-medium text-white/70"
               >
                 Tags <span className="text-red-500">*</span>
               </label>
@@ -398,7 +410,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 {formData.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#14b8a6]/10 px-3 py-1 text-sm font-medium text-[#14b8a6]"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#14b8a6]/15 px-3 py-1 text-sm font-medium text-[#14b8a6]"
                   >
                     {tag}
                     <button
@@ -430,16 +442,16 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={handleTagInputKeyPress}
                   placeholder="Add tags (press Enter to add)..."
-                  className={`flex-1 rounded-lg border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                  className={`flex-1 rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
                     errors.tags
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-slate-200 focus:border-[#14b8a6] focus:ring-[#14b8a6]/20'
+                      ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                      : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={handleAddTag}
-                  className="rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[#14b8a6] hover:text-[#14b8a6] transition-colors"
+                  className="rounded-lg border-2 border-white/15 bg-transparent px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:border-[#14b8a6] hover:text-[#14b8a6]"
                 >
                   Add
                 </button>
@@ -447,14 +459,15 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
               {errors.tags && (
                 <p className="mt-1 text-sm text-red-600">{errors.tags}</p>
               )}
-              <p className="mt-2 text-xs text-slate-500">
-                Add relevant tags to help others find your idea (e.g., AI, SaaS, Healthcare)
+              <p className="mt-2 text-xs text-white/50">
+                Add relevant tags to help others find your idea (e.g., AI, SaaS,
+                Healthcare)
               </p>
             </div>
 
             {/* Error Message */}
             {submitError && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4">
                 <div className="flex items-center">
                   <svg
                     className="h-5 w-5 text-red-600 mr-2"
@@ -475,11 +488,11 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-4 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="flex items-center justify-end gap-4 border-t border-white/10 bg-slate-900/80 px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border-2 border-slate-300 bg-white px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            className="rounded-lg border border-white/20 px-6 py-2 text-sm font-medium text-white/80 transition-colors hover:border-white hover:text-white"
           >
             Cancel
           </button>
@@ -513,7 +526,7 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
                 Posting...
               </span>
             ) : (
-              'Post Idea'
+              "Post Idea"
             )}
           </button>
         </div>
@@ -521,4 +534,3 @@ export default function PostIdeaModal({ isOpen, onClose, onSubmit }: PostIdeaMod
     </div>
   );
 }
-
