@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 
 interface Message {
   id: string;
@@ -8,6 +9,14 @@ interface Message {
   content: string;
   timestamp: Date;
 }
+
+const inputPlaceholders = [
+  "Pitch an AI solution for urban heat islands",
+  "Find a startup idea for food waste",
+  "How can we fix commuting for nurses?",
+  "Help me disrupt college dining",
+  "Suggest a B2B tool for remote teams",
+];
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
@@ -22,7 +31,6 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,16 +73,18 @@ Would you like me to elaborate on any of these ideas or explore different angles
     }, 1500);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handlePlaceholderSubmit = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    handleSend();
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="border-b border-slate-700 bg-slate-800/80 px-4 py-4 shadow-sm sm:px-6 lg:px-8 xl:px-12">
+    <div className="flex h-full flex-col overflow-hidden bg-transparent">
+      <div className="border-b border-white/10 bg-transparent px-4 py-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="w-full">
           <div className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#0e3a5f] to-[#14b8a6]">
@@ -170,50 +180,16 @@ Would you like me to elaborate on any of these ideas or explore different angles
         </div>
       </div>
 
-      <div className="border-t border-slate-700 bg-slate-800/80 px-4 py-4 shadow-lg sm:px-6 lg:px-8 xl:px-12">
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="flex items-end space-x-4">
-            <div className="flex-1 rounded-xl border-2 border-slate-600 bg-slate-900 focus-within:border-[#14b8a6] focus-within:bg-slate-800 transition-colors">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Describe a real-world problem you've encountered..."
-                rows={1}
-                className="w-full resize-none rounded-xl bg-transparent px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none sm:text-base"
-                style={{ maxHeight: "120px", minHeight: "48px" }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = "auto";
-                  target.style.height = `${Math.min(
-                    target.scrollHeight,
-                    120
-                  )}px`;
-                }}
-              />
-            </div>
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] text-white transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#14b8a6]/25 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-              aria-label="Send message"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            Press Enter to send, Shift+Enter for new line
+      <div className="border-t border-white/10 bg-transparent px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
+        <div className="mx-auto w-full max-w-4xl">
+          <PlaceholdersAndVanishInput
+            placeholders={inputPlaceholders}
+            onChange={handleInputChange}
+            onSubmit={handlePlaceholderSubmit}
+          />
+          <p className="mt-3 text-xs text-slate-400">
+            Hit Enter to send or tap the arrow. We’ll animate your prompt into
+            orbit.
           </p>
         </div>
       </div>

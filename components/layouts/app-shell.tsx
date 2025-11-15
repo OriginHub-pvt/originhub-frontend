@@ -82,9 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarBody>
         </Sidebar>
         <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-slate-900/70 p-4 shadow-[0_35px_100px_rgba(2,6,23,0.6)] backdrop-blur-2xl sm:p-6 lg:p-10">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </div>
