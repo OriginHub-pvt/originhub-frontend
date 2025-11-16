@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "OriginHub - Turn Problems into Startup Ideas",
-  description: "AI-powered platform that transforms real-world problems into actionable startup ideas",
+  description:
+    "AI-powered platform that transforms real-world problems into actionable startup ideas",
   keywords: ["startup", "AI", "ideas", "entrepreneurship", "innovation"],
 };
 
@@ -24,12 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-slate-900`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="scroll-smooth">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-slate-900`}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

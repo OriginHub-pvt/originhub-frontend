@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isSignedIn } = useUser();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -46,12 +48,21 @@ export default function Navigation() {
                 </Link>
               );
             })}
-            <Link
-              href="/chat"
-              className="rounded-lg bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#14b8a6]/25"
-            >
-              Get Started
-            </Link>
+            {isSignedIn ? (
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: "h-8 w-8",
+                  },
+                }}
+              />
+            ) : (
+              <SignInButton mode="modal">
+                <button className="rounded-lg bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#14b8a6]/25">
+                  Get Started
+                </button>
+              </SignInButton>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -98,13 +109,26 @@ export default function Navigation() {
                 </Link>
               );
             })}
-            <Link
-              href="/chat"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-4 block rounded-lg bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-4 py-2 text-center text-sm font-semibold text-white"
-            >
-              Get Started
-            </Link>
+            {isSignedIn ? (
+              <div className="mt-4 flex justify-center">
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-8 w-8",
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <SignInButton mode="modal">
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="mt-4 w-full rounded-lg bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-4 py-2 text-center text-sm font-semibold text-white"
+                >
+                  Get Started
+                </button>
+              </SignInButton>
+            )}
           </div>
         )}
       </div>
