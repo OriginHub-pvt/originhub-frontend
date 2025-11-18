@@ -1,7 +1,7 @@
 "use client";
 
 import axios from 'axios';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { Idea } from '@/components/IdeaCard';
 
 // API base URL - defaults to localhost:8000 for development
@@ -10,6 +10,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 // Create a client-side API wrapper that includes auth tokens
 export const useApiClient = () => {
     const { getToken } = useAuth();
+    const { user } = useUser();
 
     const api = axios.create({
         baseURL: API_BASE_URL,
@@ -83,9 +84,21 @@ export const useApiClient = () => {
             return response.data;
         },
 
-        // Add new idea
-        addIdea: async (ideaData: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status'>) => {
-            const response = await api.post('/ideas/add', ideaData);
+        // Add new idea (user_id and author are added automatically from Clerk)
+        addIdea: async (ideaData: Omit<Idea, 'id' | 'createdAt' | 'upvotes' | 'views' | 'status' | 'author'>) => {
+            // Get user name from Clerk
+            const userName = user?.firstName && user?.lastName
+                ? `${user.firstName} ${user.lastName}`.trim()
+                : user?.firstName || user?.lastName || 'Anonymous';
+
+            // Add user_id and author name to the request
+            const requestData = {
+                ...ideaData,
+                user_id: user?.id || '',
+                author: userName,
+            };
+
+            const response = await api.post('/ideas/add', requestData);
             return response.data;
         },
 

@@ -6,8 +6,10 @@ import PostIdeaModal from "@/components/PostIdeaModal";
 import { apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/moving-border";
 import { Spotlight } from "@/components/ui/spotlight";
+import { useUser } from "@clerk/nextjs";
 
 export default function MarketplacePage() {
+  const { isSignedIn } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "upvotes">(
@@ -243,7 +245,7 @@ export default function MarketplacePage() {
   ];
 
   return (
-    <div className="flex h-full flex-col gap-10 overflow-hidden px-2">
+    <div className="flex h-full flex-col gap-10 px-2">
       <div className="flex flex-col gap-10">
         <section className="relative rounded-3xl border border-white/5 bg-slate-950/85 p-6 shadow-[0_25px_70px_rgba(2,6,23,0.6)] backdrop-blur-lg sm:p-8 lg:p-10">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#14b8a6]/50 to-transparent" />
@@ -262,29 +264,31 @@ export default function MarketplacePage() {
                   AI-generated startups with cinematic precision.
                 </p>
               </div>
-              <Button
-                as="button"
-                onClick={() => setIsModalOpen(true)}
-                borderRadius="1.75rem"
-                className="border-white/10 bg-slate-900 text-white shadow-[0_0_45px_rgba(20,184,166,0.35)]"
-                containerClassName="h-16"
-                borderClassName="bg-gradient-to-r from-[#0e3a5f] via-[#14b8a6] to-[#0e3a5f]"
-              >
-                <span className="flex items-center gap-2 text-base font-medium">
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M12 4v16m8-8H4" />
-                  </svg>
-                  Launch new idea
-                </span>
-              </Button>
+              {isSignedIn && (
+                <Button
+                  as="button"
+                  onClick={() => setIsModalOpen(true)}
+                  borderRadius="1.75rem"
+                  className="border-white/10 bg-slate-900 text-white shadow-[0_0_45px_rgba(20,184,166,0.35)]"
+                  containerClassName="h-16"
+                  borderClassName="bg-gradient-to-r from-[#0e3a5f] via-[#14b8a6] to-[#0e3a5f]"
+                >
+                  <span className="flex items-center gap-2 text-base font-medium">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M12 4v16m8-8H4" />
+                    </svg>
+                    Launch new idea
+                  </span>
+                </Button>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

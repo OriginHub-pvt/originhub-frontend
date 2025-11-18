@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { Idea } from "./IdeaCard";
-import { apiClient } from "@/lib/api";
+import { useApiClient } from "@/lib/api-client";
 
 interface PostIdeaModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export default function PostIdeaModal({
   onClose,
   onSubmit,
 }: PostIdeaModalProps) {
+  const apiClient = useApiClient();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -24,7 +25,6 @@ export default function PostIdeaModal({
     solution: "",
     marketSize: "Medium" as "Small" | "Medium" | "Large",
     tags: [] as string[],
-    author: "",
   });
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -110,10 +110,6 @@ export default function PostIdeaModal({
       newErrors.solution = "Solution description is required";
     }
 
-    if (!formData.author.trim()) {
-      newErrors.author = "Author name is required";
-    }
-
     if (formData.tags.length === 0) {
       newErrors.tags = "At least one tag is required";
     }
@@ -133,7 +129,7 @@ export default function PostIdeaModal({
     setSubmitError(null);
 
     try {
-      // Call backend API to add idea
+      // Call backend API to add idea (user_id and author are added automatically)
       const response = await apiClient.addIdea({
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -141,7 +137,6 @@ export default function PostIdeaModal({
         solution: formData.solution.trim(),
         marketSize: formData.marketSize,
         tags: formData.tags,
-        author: formData.author.trim(),
       });
 
       // Call the onSubmit callback with the response data
@@ -155,7 +150,7 @@ export default function PostIdeaModal({
           solution: createdIdea.solution || formData.solution.trim(),
           marketSize: createdIdea.marketSize || formData.marketSize,
           tags: createdIdea.tags || formData.tags,
-          author: createdIdea.author || formData.author.trim(),
+          author: createdIdea.author || "Anonymous",
         });
       } else {
         // Fallback if backend returns different structure
@@ -166,7 +161,7 @@ export default function PostIdeaModal({
           solution: formData.solution.trim(),
           marketSize: formData.marketSize,
           tags: formData.tags,
-          author: formData.author.trim(),
+          author: "Anonymous",
         });
       }
 
@@ -178,7 +173,6 @@ export default function PostIdeaModal({
         solution: "",
         marketSize: "Medium",
         tags: [],
-        author: "",
       });
       setTagInput("");
       setErrors({});
@@ -370,31 +364,6 @@ export default function PostIdeaModal({
                   <option value="Medium">Medium</option>
                   <option value="Large">Large</option>
                 </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="author"
-                  className="mb-2 block text-sm font-medium text-white/70"
-                >
-                  Your Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="author"
-                  name="author"
-                  value={formData.author}
-                  onChange={handleChange}
-                  placeholder="Enter your name..."
-                  className={`w-full rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
-                    errors.author
-                      ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
-                      : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
-                  }`}
-                />
-                {errors.author && (
-                  <p className="mt-1 text-sm text-red-600">{errors.author}</p>
-                )}
               </div>
             </div>
 

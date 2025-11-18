@@ -60,12 +60,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const bio = typeof userBio === "string" ? userBio : null;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-neutral-950 text-white">
+    <div className="relative h-screen overflow-hidden bg-neutral-950 text-white">
       <div className="pointer-events-none absolute inset-0">
         <ShootingStars />
         <StarsBackground />
       </div>
-      <div className="relative z-10 flex min-h-screen">
+      <div className="relative z-10 flex h-screen">
         <Sidebar open={open} setOpen={setOpen}>
           <SidebarBody className="justify-between gap-10 rounded-e-3xl bg-slate-900/90 px-5 py-6 text-slate-100 shadow-2xl">
             <div className="flex flex-1 flex-col overflow-hidden">
@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </SidebarBody>
         </Sidebar>
-        <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
+        <main className="flex-1 h-full overflow-y-auto overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>
