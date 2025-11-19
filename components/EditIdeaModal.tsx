@@ -4,32 +4,49 @@ import { useState, FormEvent, useEffect } from "react";
 import { Idea } from "./IdeaCard";
 import { useApiClient } from "@/lib/api-client";
 
-interface PostIdeaModalProps {
+interface EditIdeaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (
-    idea: Omit<Idea, "id" | "createdAt" | "upvotes" | "views" | "status">
-  ) => void;
+  idea: Idea;
+  onUpdate: (updatedIdea: Idea) => void;
 }
 
-export default function PostIdeaModal({
+export default function EditIdeaModal({
   isOpen,
   onClose,
-  onSubmit,
-}: PostIdeaModalProps) {
+  idea,
+  onUpdate,
+}: EditIdeaModalProps) {
   const apiClient = useApiClient();
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    problem: "",
-    solution: "",
-    marketSize: "Medium" as "Small" | "Medium" | "Large",
-    tags: [] as string[],
+    title: idea.title,
+    description: idea.description,
+    problem: idea.problem,
+    solution: idea.solution,
+    marketSize: idea.marketSize as "Small" | "Medium" | "Large",
+    tags: idea.tags,
   });
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Update form data when idea changes
+  useEffect(() => {
+    if (idea) {
+      setFormData({
+        title: idea.title,
+        description: idea.description,
+        problem: idea.problem,
+        solution: idea.solution,
+        marketSize: idea.marketSize as "Small" | "Medium" | "Large",
+        tags: idea.tags,
+      });
+      setTagInput("");
+      setErrors({});
+      setSubmitError(null);
+    }
+  }, [idea, isOpen]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -129,57 +146,41 @@ export default function PostIdeaModal({
     setSubmitError(null);
 
     try {
-      // Call backend API to add idea (user_id and author are added automatically)
-      // Ensure marketSize defaults to "Medium" if not set
-      const response = await apiClient.addIdea({
+      // Call backend API to update idea
+      const response = await apiClient.updateIdea(idea.id, {
         title: formData.title.trim(),
         description: formData.description.trim(),
         problem: formData.problem.trim(),
         solution: formData.solution.trim(),
-        marketSize: formData.marketSize || "Medium",
+        marketSize: formData.marketSize,
         tags: formData.tags,
       });
 
-      // Call the onSubmit callback with the response data
-      // The response should contain the created idea with ID, timestamps, etc.
-      if (response.data || response.idea) {
-        const createdIdea = response.data || response.idea;
-        onSubmit({
-          title: createdIdea.title || formData.title.trim(),
-          description: createdIdea.description || formData.description.trim(),
-          problem: createdIdea.problem || formData.problem.trim(),
-          solution: createdIdea.solution || formData.solution.trim(),
-          marketSize: createdIdea.marketSize || formData.marketSize,
-          tags: createdIdea.tags || formData.tags,
-          author: createdIdea.author || "Anonymous",
-        });
-      } else {
-        // Fallback if backend returns different structure
-        onSubmit({
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          problem: formData.problem.trim(),
-          solution: formData.solution.trim(),
-          marketSize: formData.marketSize,
-          tags: formData.tags,
-          author: "Anonymous",
-        });
-      }
+      // Update the idea with response data
+      const updatedIdea: Idea = {
+        ...idea,
+        title: response.data?.title || response.title || formData.title.trim(),
+        description:
+          response.data?.description ||
+          response.description ||
+          formData.description.trim(),
+        problem:
+          response.data?.problem || response.problem || formData.problem.trim(),
+        solution:
+          response.data?.solution ||
+          response.solution ||
+          formData.solution.trim(),
+        marketSize:
+          response.data?.marketSize ||
+          response.market_size ||
+          formData.marketSize,
+        tags: response.data?.tags || response.tags || formData.tags,
+      };
 
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        problem: "",
-        solution: "",
-        marketSize: "Medium",
-        tags: [],
-      });
-      setTagInput("");
-      setErrors({});
+      onUpdate(updatedIdea);
       onClose();
     } catch (error: unknown) {
-      console.error("Error submitting idea:", error);
+      console.error("Error updating idea:", error);
       // Handle error response
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as {
@@ -190,12 +191,12 @@ export default function PostIdeaModal({
         } else if (axiosError.response?.data?.message) {
           setSubmitError(axiosError.response.data.message);
         } else {
-          setSubmitError("Failed to submit idea. Please try again.");
+          setSubmitError("Failed to update idea. Please try again.");
         }
       } else if (error instanceof Error) {
         setSubmitError(error.message);
       } else {
-        setSubmitError("Failed to submit idea. Please try again.");
+        setSubmitError("Failed to update idea. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -216,7 +217,7 @@ export default function PostIdeaModal({
       <div className="relative z-50 mx-4 max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950 text-white shadow-[0_25px_120px_rgba(2,6,23,0.9)] animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-6 py-4">
-          <h2 className="text-2xl font-bold text-white">Post a New Idea</h2>
+          <h2 className="text-2xl font-bold text-white">Edit Idea</h2>
           <button
             onClick={onClose}
             className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
@@ -345,7 +346,7 @@ export default function PostIdeaModal({
               )}
             </div>
 
-            {/* Market Size and Author */}
+            {/* Market Size */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
@@ -493,10 +494,10 @@ export default function PostIdeaModal({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Posting...
+                Updating...
               </span>
             ) : (
-              "Post Idea"
+              "Update Idea"
             )}
           </button>
         </div>
@@ -504,3 +505,4 @@ export default function PostIdeaModal({
     </div>
   );
 }
+

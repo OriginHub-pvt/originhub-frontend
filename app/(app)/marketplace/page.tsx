@@ -106,7 +106,27 @@ export default function MarketplacePage() {
             tags: Array.isArray(item.tags)
               ? item.tags.map((t) => String(t))
               : [],
-            author: String(item.author || item.author_name || "Anonymous"),
+            author: String(
+              item.author ||
+                item.author_name ||
+                (typeof item.author === "object" && item.author
+                  ? `${
+                      (
+                        item.author as {
+                          first_name?: string;
+                          last_name?: string;
+                        }
+                      ).first_name || ""
+                    } ${
+                      (
+                        item.author as {
+                          first_name?: string;
+                          last_name?: string;
+                        }
+                      ).last_name || ""
+                    }`.trim() || "Anonymous"
+                  : "Anonymous")
+            ),
             createdAt: item.createdAt
               ? new Date(String(item.createdAt))
               : item.created_at
@@ -125,6 +145,11 @@ export default function MarketplacePage() {
               | "active"
               | "validated"
               | "launched",
+            user_id: item.user_id
+              ? String(item.user_id)
+              : item.clerk_user_id
+              ? String(item.clerk_user_id)
+              : undefined,
           })
         );
         console.log("Formatted Ideas:", formattedIdeas); // Debug log

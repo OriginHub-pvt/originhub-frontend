@@ -17,6 +17,7 @@ export interface Idea {
   upvotes: number;
   views: number;
   status: "draft" | "active" | "validated" | "launched";
+  user_id?: string; // Optional: Clerk user ID of the idea owner
 }
 
 interface IdeaCardProps {

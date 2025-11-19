@@ -1,6 +1,7 @@
 "use client";
 
 import axios from 'axios';
+import { useMemo, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { Idea } from '@/components/IdeaCard';
 
@@ -12,60 +13,80 @@ export const useApiClient = () => {
     const { getToken } = useAuth();
     const { user } = useUser();
 
-    const api = axios.create({
+    const api = useMemo(() => axios.create({
         baseURL: API_BASE_URL,
         headers: {
             'Content-Type': 'application/json',
         },
-    });
+    }), []);
 
-    // Add auth token to requests
-    api.interceptors.request.use(
-        async (config) => {
-            const token = await getToken();
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            return config;
-        },
-        (error) => {
-            return Promise.reject(error);
-        }
-    );
-
-    // Response interceptor (handle errors globally)
-    api.interceptors.response.use(
-        (response) => response,
-        (error) => {
-            // Handle common errors
-            if (error.response) {
-                // Server responded with error
-                const errorData = error.response.data;
-                if (errorData && Object.keys(errorData).length > 0) {
-                    console.error('API Error:', errorData);
-                } else {
-                    console.error('API Error:', {
-                        status: error.response.status,
-                        statusText: error.response.statusText,
-                        message: `HTTP ${error.response.status}: ${error.response.statusText}`,
-                    });
+    // Set up request interceptor - update when user changes
+    useEffect(() => {
+        // Add auth token and user ID to requests
+        const requestInterceptor = api.interceptors.request.use(
+            async (config) => {
+                const token = await getToken();
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
                 }
-            } else if (error.request) {
-                // Request made but no response (network error, CORS, backend down)
-                console.error('Network Error: No response from server. Is the backend running?', {
-                    message: error.message,
-                    code: error.code,
-                });
-            } else {
-                // Something else happened
-                console.error('Error:', error.message || 'Unknown error occurred');
+                // Add X-User-Id header if user is authenticated
+                if (user?.id) {
+                    config.headers['X-User-Id'] = user.id;
+                }
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
             }
-            return Promise.reject(error);
-        }
-    );
+        );
 
-    // API functions
-    const apiClient = {
+        // Cleanup: remove interceptor when component unmounts or user changes
+        return () => {
+            api.interceptors.request.eject(requestInterceptor);
+        };
+    }, [api, getToken, user]);
+
+    // Set up response interceptor once
+    useEffect(() => {
+        // Response interceptor (handle errors globally)
+        const responseInterceptor = api.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                // Handle common errors
+                if (error.response) {
+                    // Server responded with error
+                    const errorData = error.response.data;
+                    if (errorData && Object.keys(errorData).length > 0) {
+                        console.error('API Error:', errorData);
+                    } else {
+                        console.error('API Error:', {
+                            status: error.response.status,
+                            statusText: error.response.statusText,
+                            message: `HTTP ${error.response.status}: ${error.response.statusText}`,
+                        });
+                    }
+                } else if (error.request) {
+                    // Request made but no response (network error, CORS, backend down)
+                    console.error('Network Error: No response from server. Is the backend running?', {
+                        message: error.message,
+                        code: error.code,
+                    });
+                } else {
+                    // Something else happened
+                    console.error('Error:', error.message || 'Unknown error occurred');
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        // Cleanup: remove interceptor when component unmounts
+        return () => {
+            api.interceptors.response.eject(responseInterceptor);
+        };
+    }, [api]);
+
+    // API functions - memoized to prevent recreating on every render
+    const apiClient = useMemo(() => ({
         // Get all ideas
         getIdeas: async (params?: {
             search?: string;
@@ -91,9 +112,15 @@ export const useApiClient = () => {
                 ? `${user.firstName} ${user.lastName}`.trim()
                 : user?.firstName || user?.lastName || 'Anonymous';
 
-            // Add user_id and author name to the request
+            // Backend expects camelCase for marketSize
+            // Default marketSize to "Medium" if not provided
             const requestData = {
-                ...ideaData,
+                title: ideaData.title,
+                description: ideaData.description,
+                problem: ideaData.problem,
+                solution: ideaData.solution,
+                marketSize: ideaData.marketSize || 'Medium',
+                tags: ideaData.tags,
                 user_id: user?.id || '',
                 author: userName,
             };
@@ -104,7 +131,16 @@ export const useApiClient = () => {
 
         // Update idea
         updateIdea: async (id: string, ideaData: Partial<Idea>) => {
-            const response = await api.put(`/ideas/${id}`, ideaData);
+            // Backend expects camelCase for marketSize
+            const backendData: Record<string, unknown> = {};
+            if (ideaData.title !== undefined) backendData.title = ideaData.title;
+            if (ideaData.description !== undefined) backendData.description = ideaData.description;
+            if (ideaData.problem !== undefined) backendData.problem = ideaData.problem;
+            if (ideaData.solution !== undefined) backendData.solution = ideaData.solution;
+            if (ideaData.marketSize !== undefined) backendData.marketSize = ideaData.marketSize;
+            if (ideaData.tags !== undefined) backendData.tags = ideaData.tags;
+
+            const response = await api.put(`/ideas/${id}`, backendData);
             return response.data;
         },
 
@@ -119,7 +155,7 @@ export const useApiClient = () => {
             const response = await api.post('/chat', { message });
             return response.data;
         },
-    };
+    }), [api, user]);
 
     return apiClient;
 };
