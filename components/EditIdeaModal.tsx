@@ -18,6 +18,10 @@ export default function EditIdeaModal({
   onUpdate,
 }: EditIdeaModalProps) {
   const apiClient = useApiClient();
+  // Determine idea type based on whether link exists
+  const [ideaType, setIdeaType] = useState<"solved" | "unsolved">(
+    idea.link ? "solved" : "unsolved"
+  );
   const [formData, setFormData] = useState({
     title: idea.title,
     description: idea.description,
@@ -25,6 +29,7 @@ export default function EditIdeaModal({
     solution: idea.solution,
     marketSize: idea.marketSize as "Small" | "Medium" | "Large",
     tags: idea.tags,
+    link: idea.link || "",
   });
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -34,6 +39,7 @@ export default function EditIdeaModal({
   // Update form data when idea changes
   useEffect(() => {
     if (idea) {
+      setIdeaType(idea.link ? "solved" : "unsolved");
       setFormData({
         title: idea.title,
         description: idea.description,
@@ -41,6 +47,7 @@ export default function EditIdeaModal({
         solution: idea.solution,
         marketSize: idea.marketSize as "Small" | "Medium" | "Large",
         tags: idea.tags,
+        link: idea.link || "",
       });
       setTagInput("");
       setErrors({});
@@ -127,6 +134,20 @@ export default function EditIdeaModal({
       newErrors.solution = "Solution description is required";
     }
 
+    // If idea is solved, link is required
+    if (ideaType === "solved" && !formData.link.trim()) {
+      newErrors.link = "Solution link is required for solved ideas";
+    }
+
+    // Validate URL format if link is provided
+    if (ideaType === "solved" && formData.link.trim()) {
+      try {
+        new URL(formData.link.trim());
+      } catch {
+        newErrors.link = "Please enter a valid URL";
+      }
+    }
+
     if (formData.tags.length === 0) {
       newErrors.tags = "At least one tag is required";
     }
@@ -146,14 +167,37 @@ export default function EditIdeaModal({
     setSubmitError(null);
 
     try {
+      // Remove status tags (solved, unsolved, draft, posted) from user tags
+      const cleanedTags = formData.tags.filter(
+        (tag) =>
+          tag !== "solved" &&
+          tag !== "unsolved" &&
+          tag !== "draft" &&
+          tag !== "posted"
+      );
+
+      // Add "solved" or "unsolved" tag based on idea type
+      const tagsWithType = [...cleanedTags, ideaType];
+
+      // If idea has a link, add "posted" tag; otherwise no status tag
+      const finalTags =
+        ideaType === "solved" && formData.link.trim()
+          ? [...tagsWithType, "posted"]
+          : tagsWithType;
+
       // Call backend API to update idea
+      // If switching to unsolved, explicitly set link to null to clear it in database
       const response = await apiClient.updateIdea(idea.id, {
         title: formData.title.trim(),
         description: formData.description.trim(),
         problem: formData.problem.trim(),
         solution: formData.solution.trim(),
         marketSize: formData.marketSize,
-        tags: formData.tags,
+        tags: finalTags,
+        link:
+          ideaType === "solved" && formData.link.trim()
+            ? formData.link.trim()
+            : null, // Explicitly set to null when unsolved to clear link in database
       });
 
       // Update the idea with response data
@@ -174,7 +218,11 @@ export default function EditIdeaModal({
           response.data?.marketSize ||
           response.market_size ||
           formData.marketSize,
-        tags: response.data?.tags || response.tags || formData.tags,
+        tags: response.data?.tags || response.tags || finalTags,
+        link:
+          ideaType === "solved" && formData.link.trim()
+            ? formData.link.trim()
+            : undefined,
       };
 
       onUpdate(updatedIdea);
@@ -346,6 +394,78 @@ export default function EditIdeaModal({
               )}
             </div>
 
+            {/* Idea Type Selection */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70">
+                Idea Type <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="ideaType"
+                    value="unsolved"
+                    checked={ideaType === "unsolved"}
+                    onChange={(e) => {
+                      setIdeaType(e.target.value as "solved" | "unsolved");
+                      // Clear link when switching to unsolved
+                      if (e.target.value === "unsolved") {
+                        setFormData((prev) => ({ ...prev, link: "" }));
+                      }
+                    }}
+                    className="h-4 w-4 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0"
+                  />
+                  <span className="text-white">Open Idea (needs solving)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="ideaType"
+                    value="solved"
+                    checked={ideaType === "solved"}
+                    onChange={(e) => {
+                      setIdeaType(e.target.value as "solved" | "unsolved");
+                    }}
+                    className="h-4 w-4 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0"
+                  />
+                  <span className="text-white">
+                    Existing Solution (already solved)
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Solution Link (only shown when solved is selected) */}
+            {ideaType === "solved" && (
+              <div>
+                <label
+                  htmlFor="link"
+                  className="mb-2 block text-sm font-medium text-white/70"
+                >
+                  Solution Link <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  id="link"
+                  name="link"
+                  value={formData.link}
+                  onChange={handleChange}
+                  placeholder="https://example.com/product"
+                  className={`w-full rounded-lg border-2 border-white/10 bg-slate-900/70 px-4 py-3 text-white placeholder-white/40 transition-colors focus:outline-none focus:ring-2 ${
+                    errors.link
+                      ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                      : "focus:border-[#14b8a6] focus:ring-[#14b8a6]/20"
+                  }`}
+                />
+                {errors.link && (
+                  <p className="mt-1 text-sm text-red-600">{errors.link}</p>
+                )}
+                <p className="mt-2 text-xs text-white/50">
+                  Provide a link to the existing solution or marketplace
+                </p>
+              </div>
+            )}
+
             {/* Market Size */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -505,4 +625,3 @@ export default function EditIdeaModal({
     </div>
   );
 }
-

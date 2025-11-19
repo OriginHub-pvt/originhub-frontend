@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  useUser,
-  SignInButton,
-  SignOutButton,
-  UserButton,
-} from "@clerk/nextjs";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import { ShootingStars } from "@/components/ui/shooting-stars";
 import { StarsBackground } from "@/components/ui/stars-background";
@@ -123,11 +118,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </div>
                     )}
                   </div>
-                  <SignOutButton>
-                    <button className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors">
-                      Sign Out
-                    </button>
-                  </SignOutButton>
                 </>
               ) : (
                 <SignInButton mode="modal">
