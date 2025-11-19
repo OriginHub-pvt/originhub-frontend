@@ -207,6 +207,13 @@ export const useApiClient = () => {
             return response.data;
         },
 
+        // Delete a chat
+        deleteChat: async (chatId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/chat/${chatId}`);
+            return response.data;
+        },
+
         // Get messages for a specific chat
         getChatMessages: async (chatId: string) => {
             // X-User-Id header is automatically added by the request interceptor

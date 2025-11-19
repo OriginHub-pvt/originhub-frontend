@@ -12,6 +12,7 @@ import {
   IconBulb,
   IconUser,
   IconPlus,
+  IconTrash,
 } from "@tabler/icons-react";
 import { useApiClient } from "@/lib/api-client";
 
@@ -64,6 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const apiClient = useApiClient();
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   const isChatPage = pathname === "/chat";
 
   // Extract bio from metadata with proper type checking
@@ -142,6 +144,56 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.scrollTo(0, 0);
   };
 
+  const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent selecting chat when clicking delete
+
+    // Confirmation dialog
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this chat? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setDeletingChatId(chatId);
+    try {
+      await apiClient.deleteChat(chatId);
+
+      // Remove from chat list
+      setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+
+      // If deleted chat is currently active, navigate to new chat
+      const currentChatId = new URLSearchParams(window.location.search).get(
+        "chatId"
+      );
+      if (currentChatId === chatId) {
+        router.push("/chat?new=true");
+      }
+
+      // Refresh chat history to ensure consistency
+      if (isChatPage && isSignedIn && user?.id) {
+        const response = await apiClient.getChatHistory();
+        let chats: ChatHistoryItem[] = [];
+        if (response?.data?.chats && Array.isArray(response.data.chats)) {
+          chats = response.data.chats;
+        } else if (Array.isArray(response?.data)) {
+          chats = response.data;
+        } else if (Array.isArray(response)) {
+          chats = response;
+        } else if (response?.chats) {
+          chats = response.chats;
+        }
+        setChatHistory(chats);
+      }
+    } catch (error: unknown) {
+      console.error("Error deleting chat:", error);
+      alert("Failed to delete chat. Please try again.");
+    } finally {
+      setDeletingChatId(null);
+    }
+  };
+
   return (
     <div className="relative h-screen overflow-hidden bg-neutral-950 text-white">
       <div className="pointer-events-none absolute inset-0">
@@ -213,21 +265,55 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           displayTitle.length > 30
                             ? displayTitle.substring(0, 30) + "..."
                             : displayTitle;
+                        const isDeleting = deletingChatId === chat.id;
 
                         return (
-                          <button
+                          <div
                             key={chat.id}
-                            onClick={() => handleChatClick(chat.id)}
-                            className="group flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
-                            title={displayTitle}
+                            className="group flex items-center gap-2 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <IconMessageCircle className="h-4 w-4 shrink-0 text-white/50 group-hover:text-[#14b8a6] transition-colors" />
+                            <button
+                              onClick={() => handleChatClick(chat.id)}
+                              className="flex flex-1 items-center gap-2 px-2 py-2 text-left text-sm text-white/70 hover:text-white transition-colors"
+                              title={displayTitle}
+                              disabled={isDeleting}
+                            >
+                              <IconMessageCircle className="h-4 w-4 shrink-0 text-white/50 group-hover:text-[#14b8a6] transition-colors" />
+                              {open && (
+                                <span className="truncate flex-1">
+                                  {truncatedTitle}
+                                </span>
+                              )}
+                            </button>
                             {open && (
-                              <span className="truncate flex-1">
-                                {truncatedTitle}
-                              </span>
+                              <button
+                                onClick={(e) => handleDeleteChat(chat.id, e)}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-all"
+                                title="Delete chat"
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? (
+                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                                ) : (
+                                  <IconTrash className="h-3.5 w-3.5" />
+                                )}
+                              </button>
                             )}
-                          </button>
+                            {!open && (
+                              <button
+                                onClick={(e) => handleDeleteChat(chat.id, e)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-all"
+                                title="Delete chat"
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? (
+                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                                ) : (
+                                  <IconTrash className="h-3 w-3" />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         );
                       })
                     )}

@@ -146,6 +146,13 @@ export const apiClient = {
         return response.data;
     },
 
+    // Delete a chat
+    deleteChat: async (chatId: string) => {
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.delete(`/chat/${chatId}`);
+        return response.data;
+    },
+
     // Get messages for a specific chat
     getChatMessages: async (chatId: string) => {
         // Note: X-User-Id header should be added by the client-side wrapper
