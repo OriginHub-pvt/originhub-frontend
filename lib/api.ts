@@ -78,8 +78,8 @@ export const apiClient = {
         if (params?.sort_by) queryParams.sort_by = params.sort_by;
         if (params?.page) queryParams.page = params.page;
         if (params?.limit) queryParams.limit = params.limit;
-        
-        const response = await api.get('/ideas', { 
+
+        const response = await api.get('/ideas', {
             params: queryParams,
             // Ensure arrays are serialized with brackets: tags[]=value
             paramsSerializer: {
@@ -114,8 +114,42 @@ export const apiClient = {
     },
 
     // Send chat message
-    sendChatMessage: async (message: string) => {
-        const response = await api.post('/chat', { message });
+    sendChatMessage: async (message: string, chatId?: string) => {
+        const requestBody: Record<string, unknown> = { message };
+        // Only include chat_id if it exists (for continuing existing chat)
+        if (chatId) {
+            requestBody.chat_id = chatId;
+        }
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.post('/chat', requestBody);
+        return response.data;
+    },
+
+    // Get chat history
+    getChatHistory: async () => {
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.get('/chat/list');
+        return response.data;
+    },
+
+    // Create new chat
+    createNewChat: async () => {
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.post('/chat/new');
+        return response.data;
+    },
+
+    // Get or create empty chat (reuses existing empty chat or creates new)
+    getEmptyChat: async () => {
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.get('/chat/empty');
+        return response.data;
+    },
+
+    // Get messages for a specific chat
+    getChatMessages: async (chatId: string) => {
+        // Note: X-User-Id header should be added by the client-side wrapper
+        const response = await api.get(`/chat/${chatId}/messages`);
         return response.data;
     },
 };

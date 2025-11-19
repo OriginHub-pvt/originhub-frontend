@@ -175,8 +175,42 @@ export const useApiClient = () => {
         },
 
         // Send chat message
-        sendChatMessage: async (message: string) => {
-            const response = await api.post('/chat', { message });
+        sendChatMessage: async (message: string, chatId?: string) => {
+            const requestBody: Record<string, unknown> = { message };
+            // Only include chat_id if it exists (for continuing existing chat)
+            if (chatId) {
+                requestBody.chat_id = chatId;
+            }
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post('/chat', requestBody);
+            return response.data;
+        },
+
+        // Get chat history
+        getChatHistory: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get('/chat/list');
+            return response.data;
+        },
+
+        // Create new chat
+        createNewChat: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post('/chat/new');
+            return response.data;
+        },
+
+        // Get or create empty chat (reuses existing empty chat or creates new)
+        getEmptyChat: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get('/chat/empty');
+            return response.data;
+        },
+
+        // Get messages for a specific chat
+        getChatMessages: async (chatId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get(`/chat/${chatId}/messages`);
             return response.data;
         },
     }), [api, user]);
