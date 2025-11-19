@@ -114,7 +114,7 @@ export const useApiClient = () => {
 
             // Backend expects camelCase for marketSize
             // Default marketSize to "Medium" if not provided
-            const requestData = {
+            const requestData: Record<string, unknown> = {
                 title: ideaData.title,
                 description: ideaData.description,
                 problem: ideaData.problem,
@@ -124,6 +124,11 @@ export const useApiClient = () => {
                 user_id: user?.id || '',
                 author: userName,
             };
+
+            // Include link only if provided
+            if (ideaData.link) {
+                requestData.link = ideaData.link;
+            }
 
             const response = await api.post('/ideas/add', requestData);
             return response.data;
@@ -139,6 +144,8 @@ export const useApiClient = () => {
             if (ideaData.solution !== undefined) backendData.solution = ideaData.solution;
             if (ideaData.marketSize !== undefined) backendData.marketSize = ideaData.marketSize;
             if (ideaData.tags !== undefined) backendData.tags = ideaData.tags;
+            // Always include link (can be null to clear it in database)
+            if (ideaData.link !== undefined) backendData.link = ideaData.link;
 
             const response = await api.put(`/ideas/${id}`, backendData);
             return response.data;

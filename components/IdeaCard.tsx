@@ -16,8 +16,9 @@ export interface Idea {
   createdAt: Date;
   upvotes: number;
   views: number;
-  status: "draft" | "active" | "validated" | "launched";
+  status: "draft" | "active" | "validated" | "launched" | "posted";
   user_id?: string; // Optional: Clerk user ID of the idea owner
+  link?: string | null; // Optional: Link to existing solution if idea is solved (null to clear)
 }
 
 interface IdeaCardProps {
@@ -30,6 +31,7 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
     active: "bg-blue-900 text-blue-300",
     validated: "bg-teal-900 text-teal-300",
     launched: "bg-green-900 text-green-300",
+    posted: "bg-green-600 text-green-100",
   };
 
   return (
@@ -56,13 +58,16 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
                   by {idea.author} · {idea.createdAt.toLocaleDateString()}
                 </p>
               </div>
-              <span
-                className={`ml-4 rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                  statusColors[idea.status]
-                }`}
-              >
-                {idea.status}
-              </span>
+              {/* Show "Posted" status only if link exists, otherwise show nothing */}
+              {idea.link && (
+                <span
+                  className={`ml-4 rounded-full px-3 py-1 text-xs font-medium capitalize ${
+                    statusColors.posted
+                  }`}
+                >
+                  Posted
+                </span>
+              )}
             </div>
 
             {/* Description */}

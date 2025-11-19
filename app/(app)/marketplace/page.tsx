@@ -140,16 +140,21 @@ export default function MarketplacePage() {
             views: Number(
               item.views || item.views_count || item.view_count || 0
             ),
-            status: (item.status || "draft") as
+            status: (item.link ? "posted" : item.status || "draft") as
               | "draft"
               | "active"
               | "validated"
-              | "launched",
+              | "launched"
+              | "posted",
             user_id: item.user_id
               ? String(item.user_id)
               : item.clerk_user_id
               ? String(item.clerk_user_id)
               : undefined,
+            link:
+              item.link || item.solution_link || item.solutionLink
+                ? String(item.link || item.solution_link || item.solutionLink)
+                : undefined,
           })
         );
         console.log("Formatted Ideas:", formattedIdeas); // Debug log

@@ -63,10 +63,24 @@ export default function IdeaDetailPage() {
               : [],
             author: String(
               item.author ||
-                (item.author_name ||
-                  (typeof item.author === "object" && item.author
-                    ? `${(item.author as { first_name?: string; last_name?: string }).first_name || ""} ${(item.author as { first_name?: string; last_name?: string }).last_name || ""}`.trim()
-                    : "Anonymous"))
+                item.author_name ||
+                (typeof item.author === "object" && item.author
+                  ? `${
+                      (
+                        item.author as {
+                          first_name?: string;
+                          last_name?: string;
+                        }
+                      ).first_name || ""
+                    } ${
+                      (
+                        item.author as {
+                          first_name?: string;
+                          last_name?: string;
+                        }
+                      ).last_name || ""
+                    }`.trim()
+                  : "Anonymous")
             ),
             createdAt: item.createdAt
               ? new Date(String(item.createdAt))
@@ -81,16 +95,21 @@ export default function IdeaDetailPage() {
             views: Number(
               item.views || item.views_count || item.view_count || 0
             ),
-            status: (item.status || "draft") as
+            status: (item.link ? "posted" : item.status || "draft") as
               | "draft"
               | "active"
               | "validated"
-              | "launched",
+              | "launched"
+              | "posted",
             user_id: item.user_id
               ? String(item.user_id)
               : item.clerk_user_id
               ? String(item.clerk_user_id)
               : undefined,
+            link:
+              item.link || item.solution_link || item.solutionLink
+                ? String(item.link || item.solution_link || item.solutionLink)
+                : undefined,
           };
           setIdea(formattedIdea);
         } else {
@@ -100,7 +119,10 @@ export default function IdeaDetailPage() {
         console.error("Error fetching idea:", err);
         if (err && typeof err === "object" && "response" in err) {
           const axiosError = err as {
-            response?: { status?: number; data?: { error?: string; message?: string } };
+            response?: {
+              status?: number;
+              data?: { error?: string; message?: string };
+            };
           };
           if (axiosError.response?.status === 404) {
             setError("Idea not found.");
@@ -175,6 +197,7 @@ export default function IdeaDetailPage() {
     active: "bg-blue-900 text-blue-300",
     validated: "bg-teal-900 text-teal-300",
     launched: "bg-green-900 text-green-300",
+    posted: "bg-green-600 text-green-100",
   };
 
   if (isLoading) {
@@ -303,18 +326,21 @@ export default function IdeaDetailPage() {
                 <span>{idea.upvotes} upvotes</span>
               </div>
             </div>
-            <span
-              className={`ml-4 rounded-full px-4 py-2 text-sm font-medium capitalize ${
-                statusColors[idea.status]
-              }`}
-            >
-              {idea.status}
-            </span>
+            {/* Show "Posted" status only if link exists, otherwise show nothing */}
+            {idea.link && (
+              <span
+                className={`ml-4 rounded-full px-4 py-2 text-sm font-medium capitalize ${statusColors.posted}`}
+              >
+                Posted
+              </span>
+            )}
           </div>
 
           {/* Description Section */}
           <section className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-white">Description</h2>
+            <h2 className="mb-3 text-xl font-semibold text-white">
+              Description
+            </h2>
             <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
               <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
                 {idea.description}
@@ -343,6 +369,62 @@ export default function IdeaDetailPage() {
               </p>
             </div>
           </section>
+
+          {/* Solution Link Section (only shown if link exists) */}
+          {idea.link && (
+            <section className="mb-8">
+              <h2 className="mb-3 text-xl font-semibold text-white">
+                Startup Link
+              </h2>
+              <div className="rounded-lg bg-gradient-to-r from-[#14b8a6]/10 to-[#0e3a5f]/10 p-6 border border-[#14b8a6]/30">
+                <div className="flex items-center gap-3">
+                  <svg
+                    className="h-6 w-6 text-[#14b8a6] flex-shrink-0"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-400 mb-2">
+                      This idea has an existing solution:
+                    </p>
+                    <a
+                      href={idea.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#14b8a6] hover:text-[#0d9488] font-medium break-all underline transition-colors"
+                    >
+                      {idea.link}
+                    </a>
+                  </div>
+                  <a
+                    href={idea.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d9488] transition-colors whitespace-nowrap"
+                  >
+                    <span>Visit Solution</span>
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Metadata Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -459,7 +541,11 @@ export default function IdeaDetailPage() {
             {/* Content */}
             <div className="px-6 py-6">
               <p className="text-slate-300">
-                Are you sure you want to delete <span className="font-semibold text-white">&quot;{idea?.title}&quot;</span>? This action cannot be undone.
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-white">
+                  &quot;{idea?.title}&quot;
+                </span>
+                ? This action cannot be undone.
               </p>
             </div>
 
@@ -513,4 +599,3 @@ export default function IdeaDetailPage() {
     </div>
   );
 }
-
