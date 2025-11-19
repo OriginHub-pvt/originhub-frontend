@@ -95,7 +95,24 @@ export const useApiClient = () => {
             page?: number;
             limit?: number;
         }) => {
-            const response = await api.get('/ideas', { params });
+            // Build query params - ensure tags[] format for backend
+            const queryParams: Record<string, unknown> = {};
+            if (params?.search) queryParams.search = params.search;
+            if (params?.tags && params.tags.length > 0) {
+                // Pass as 'tags' - axios will serialize array as tags[]=value1&tags[]=value2
+                queryParams.tags = params.tags;
+            }
+            if (params?.sort_by) queryParams.sort_by = params.sort_by;
+            if (params?.page) queryParams.page = params.page;
+            if (params?.limit) queryParams.limit = params.limit;
+
+            const response = await api.get('/ideas', {
+                params: queryParams,
+                // Ensure arrays are serialized with brackets: tags[]=value
+                paramsSerializer: {
+                    indexes: null, // This makes axios serialize arrays as tags[]=value
+                }
+            });
             return response.data;
         },
 
