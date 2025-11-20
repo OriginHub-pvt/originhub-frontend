@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Idea } from "@/components/IdeaCard";
@@ -22,15 +22,23 @@ export default function IdeaDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Use ref to track if views have been incremented for this ideaId (persists across re-renders)
+  const hasIncrementedViewsRef = useRef<string | null>(null);
 
   // Check if current user is the owner of the idea
   const isOwner = idea && user && idea.user_id === user.id;
 
+  // Reset the ref when ideaId changes
   useEffect(() => {
-    const fetchIdea = async () => {
+    hasIncrementedViewsRef.current = null;
+  }, [ideaId]);
+
+  useEffect(() => {
+    const fetchIdeaAndIncrementViews = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        // 1. Fetch idea details
         const response = await apiClient.getIdea(ideaId);
 
         // Handle different response structures
@@ -112,6 +120,64 @@ export default function IdeaDetailPage() {
                 : undefined,
           };
           setIdea(formattedIdea);
+
+          // 2. Increment views (only once per ideaId)
+          // Check if we've already incremented views for this specific ideaId
+          // Set the ref synchronously BEFORE the async call to prevent race conditions
+          if (hasIncrementedViewsRef.current !== ideaId) {
+            // Mark that we're incrementing for this ideaId (set synchronously to prevent double calls)
+            hasIncrementedViewsRef.current = ideaId;
+            
+            // Use an IIFE to ensure the increment happens asynchronously but only once
+            (async () => {
+              try {
+                const viewResponse = await apiClient.incrementIdeaViews(ideaId);
+              
+              // Handle response structure
+              let updatedIdeaData: unknown = null;
+              if (viewResponse && typeof viewResponse === "object") {
+                const resp = viewResponse as Record<string, unknown>;
+                if (resp.data && typeof resp.data === "object") {
+                  updatedIdeaData = resp.data;
+                } else {
+                  updatedIdeaData = viewResponse;
+                }
+              } else {
+                updatedIdeaData = viewResponse;
+              }
+
+              // Update idea with new view count if response is valid
+              if (updatedIdeaData && typeof updatedIdeaData === "object") {
+                const updatedItem = updatedIdeaData as Record<string, unknown>;
+                const newViews = Number(
+                  updatedItem.views || updatedItem.views_count || updatedItem.view_count || formattedIdea.views + 1
+                );
+                
+                // Update the idea with incremented view count
+                setIdea((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, views: newViews };
+                });
+              } else {
+                // Fallback: optimistically increment views
+                setIdea((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, views: prev.views + 1 };
+                });
+              }
+              } catch (viewError) {
+                // Silently fail - views are not critical, don't block page load
+                console.warn("Failed to increment views:", viewError);
+                // Optionally do optimistic update
+                setIdea((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, views: prev.views + 1 };
+                });
+                // Reset the ref on error so it can retry if needed
+                hasIncrementedViewsRef.current = null;
+              }
+            })();
+          }
         } else {
           setError("Invalid response format from server.");
         }
@@ -142,7 +208,7 @@ export default function IdeaDetailPage() {
     };
 
     if (ideaId) {
-      fetchIdea();
+      fetchIdeaAndIncrementViews();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ideaId]);

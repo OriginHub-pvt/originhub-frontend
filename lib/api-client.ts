@@ -220,6 +220,20 @@ export const useApiClient = () => {
             const response = await api.get(`/chat/${chatId}/messages`);
             return response.data;
         },
+
+        // Increment idea views (public endpoint, no auth required)
+        incrementIdeaViews: async (ideaId: string) => {
+            // This is a public endpoint, so we don't need auth headers
+            // Use a separate axios instance without auth for this call
+            const publicApi = axios.create({
+                baseURL: API_BASE_URL,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const response = await publicApi.post(`/ideas/${ideaId}/view`);
+            return response.data;
+        },
     }), [api, user]);
 
     return apiClient;
