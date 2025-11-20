@@ -217,6 +217,15 @@ export default function MarketplacePage() {
     }
   };
 
+  // Handle upvote - update the idea in the list
+  const handleUpvote = (ideaId: string, newUpvoteCount: number) => {
+    setIdeas((prevIdeas) =>
+      prevIdeas.map((idea) =>
+        idea.id === ideaId ? { ...idea, upvotes: newUpvoteCount } : idea
+      )
+    );
+  };
+
   // Display ideas from backend
   // Backend already handles search/filter/sort, so we just display what we get
   const filteredIdeas = useMemo(() => {
@@ -473,7 +482,7 @@ export default function MarketplacePage() {
           {!isLoading && filteredIdeas.length > 0 && (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredIdeas.map((idea) => (
-                <IdeaCard key={idea.id} idea={idea} />
+                <IdeaCard key={idea.id} idea={idea} onUpvote={handleUpvote} />
               ))}
             </div>
           )}

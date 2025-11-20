@@ -22,6 +22,8 @@ export default function IdeaDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
   // Use ref to track if views have been incremented for this ideaId (persists across re-renders)
   const hasIncrementedViewsRef = useRef<string | null>(null);
 
@@ -32,6 +34,47 @@ export default function IdeaDetailPage() {
   useEffect(() => {
     hasIncrementedViewsRef.current = null;
   }, [ideaId]);
+
+  // Check upvote status when idea loads or when user changes
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!ideaId || !user?.id) {
+        // If not authenticated, user can't have upvoted
+        setHasUpvoted(false);
+        return;
+      }
+
+      try {
+        const response = await apiClient.checkUpvoteStatus(ideaId);
+        
+        // Handle response structure
+        let hasUpvotedValue = false;
+        if (response && typeof response === "object") {
+          const resp = response as Record<string, unknown>;
+          if (typeof resp.has_upvoted === "boolean") {
+            hasUpvotedValue = resp.has_upvoted;
+          } else if (resp.data && typeof resp.data === "object") {
+            const data = resp.data as Record<string, unknown>;
+            if (typeof data.has_upvoted === "boolean") {
+              hasUpvotedValue = data.has_upvoted;
+            }
+          }
+        }
+        
+        setHasUpvoted(hasUpvotedValue);
+      } catch (error) {
+        // If endpoint doesn't exist or user is not authenticated, default to false
+        console.warn("Could not check upvote status:", error);
+        setHasUpvoted(false);
+      }
+    };
+
+    if (ideaId && user?.id) {
+      checkStatus();
+    } else {
+      setHasUpvoted(false);
+    }
+  }, [ideaId, user?.id, apiClient]);
 
   useEffect(() => {
     const fetchIdeaAndIncrementViews = async () => {
@@ -226,6 +269,84 @@ export default function IdeaDetailPage() {
 
   const handleUpdate = (updatedIdea: Idea) => {
     setIdea(updatedIdea);
+  };
+
+  const handleUpvoteToggle = async () => {
+    if (!idea || isUpvoting || !user?.id) {
+      if (!user?.id) {
+        // Could show a toast or alert here
+        console.log("Please sign in to upvote ideas");
+      }
+      return;
+    }
+
+    setIsUpvoting(true);
+    try {
+      let response;
+      let newUpvotes: number;
+
+      if (hasUpvoted) {
+        // Remove upvote
+        response = await apiClient.removeUpvote(idea.id);
+      } else {
+        // Add upvote
+        response = await apiClient.upvoteIdea(idea.id);
+      }
+      
+      // Handle response structure
+      let updatedIdeaData: unknown = null;
+      if (response && typeof response === "object") {
+        const resp = response as Record<string, unknown>;
+        if (resp.data && typeof resp.data === "object") {
+          updatedIdeaData = resp.data;
+        } else {
+          updatedIdeaData = response;
+        }
+      } else {
+        updatedIdeaData = response;
+      }
+
+      if (updatedIdeaData && typeof updatedIdeaData === "object") {
+        const updatedItem = updatedIdeaData as Record<string, unknown>;
+        newUpvotes = Number(
+          updatedItem.upvotes || updatedItem.upvotes_count || updatedItem.upvote_count || idea.upvotes
+        );
+        
+        // Check if response includes upvote status
+        const upvotedStatus = updatedItem.upvoted !== undefined 
+          ? Boolean(updatedItem.upvoted)
+          : !hasUpvoted; // Toggle if not provided
+        
+        // Update the idea with new upvote count
+        setIdea((prev) => {
+          if (!prev) return prev;
+          return { ...prev, upvotes: newUpvotes };
+        });
+        setHasUpvoted(upvotedStatus);
+      } else {
+        // Fallback: optimistically update
+        setIdea((prev) => {
+          if (!prev) return prev;
+          return { ...prev, upvotes: hasUpvoted ? prev.upvotes - 1 : prev.upvotes + 1 };
+        });
+        setHasUpvoted(!hasUpvoted);
+      }
+    } catch (error: unknown) {
+      console.error("Error toggling upvote:", error);
+      
+      // Handle specific errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("already upvoted")) {
+        setHasUpvoted(true); // Sync state
+        console.warn("You have already upvoted this idea");
+      } else if (errorMessage.includes("not upvoted")) {
+        setHasUpvoted(false); // Sync state
+        console.warn("You have not upvoted this idea");
+      }
+      // Don't show alert, just log the error
+    } finally {
+      setIsUpvoting(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -508,18 +629,32 @@ export default function IdeaDetailPage() {
                 Upvotes
               </h3>
               <div className="flex items-center gap-2">
-                <svg
-                  className="h-6 w-6 text-[#14b8a6]"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <button
+                  onClick={handleUpvoteToggle}
+                  disabled={isUpvoting || !user}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-all ${
+                    hasUpvoted
+                      ? "bg-[#14b8a6]/20 text-[#14b8a6] border border-[#14b8a6]/30 hover:bg-[#14b8a6]/30"
+                      : "hover:bg-slate-800 text-white"
+                  } ${isUpvoting || !user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  title={!user ? "Sign in to upvote" : hasUpvoted ? "Remove upvote" : "Upvote"}
                 >
-                  <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                </svg>
-                <p className="text-2xl font-bold text-white">{idea.upvotes}</p>
+                  <svg
+                    className="h-6 w-6 text-[#14b8a6]"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                  </svg>
+                  <p className="text-2xl font-bold">{idea.upvotes}</p>
+                  {hasUpvoted && (
+                    <span className="text-[#14b8a6] text-lg">✓</span>
+                  )}
+                </button>
               </div>
             </div>
 

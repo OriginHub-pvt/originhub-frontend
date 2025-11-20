@@ -234,6 +234,27 @@ export const useApiClient = () => {
             const response = await publicApi.post(`/ideas/${ideaId}/view`);
             return response.data;
         },
+
+        // Upvote idea (requires authentication - X-User-Id header is automatically added)
+        upvoteIdea: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post(`/ideas/${ideaId}/upvote`);
+            return response.data;
+        },
+
+        // Remove upvote from idea (requires authentication - X-User-Id header is automatically added)
+        removeUpvote: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/ideas/${ideaId}/upvote`);
+            return response.data;
+        },
+
+        // Check if current user has upvoted an idea (requires authentication)
+        checkUpvoteStatus: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get(`/ideas/${ideaId}/upvote-status`);
+            return response.data;
+        },
     }), [api, user]);
 
     return apiClient;
