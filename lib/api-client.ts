@@ -255,6 +255,31 @@ export const useApiClient = () => {
             const response = await api.get(`/ideas/${ideaId}/upvote-status`);
             return response.data;
         },
+
+        // Get all comments for an idea (public endpoint)
+        getIdeaComments: async (ideaId: string) => {
+            const response = await api.get(`/ideas/${ideaId}/comments`);
+            return response.data;
+        },
+
+        // Create a comment (requires authentication)
+        // parentCommentId is optional - if provided, creates a reply to that comment
+        createComment: async (ideaId: string, content: string, parentCommentId?: string | null) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const requestBody: Record<string, unknown> = { content };
+            if (parentCommentId) {
+                requestBody.parent_comment_id = parentCommentId;
+            }
+            const response = await api.post(`/ideas/${ideaId}/comments`, requestBody);
+            return response.data;
+        },
+
+        // Delete a comment (requires authentication)
+        deleteComment: async (ideaId: string, commentId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/ideas/${ideaId}/comments/${commentId}`);
+            return response.data;
+        },
     }), [api, user]);
 
     return apiClient;

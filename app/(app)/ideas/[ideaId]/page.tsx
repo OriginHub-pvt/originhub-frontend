@@ -8,6 +8,7 @@ import { useApiClient } from "@/lib/api-client";
 import EditIdeaModal from "@/components/EditIdeaModal";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Button } from "@/components/ui/moving-border";
+import CommentsList from "@/components/CommentsList";
 
 export default function IdeaDetailPage() {
   const params = useParams();
@@ -696,6 +697,9 @@ export default function IdeaDetailPage() {
             </div>
           </section>
         </BackgroundGradient>
+
+        {/* Comments Section */}
+        <CommentsList ideaId={idea.id} ideaOwnerId={idea.user_id} />
       </div>
 
       {/* Edit Modal */}
