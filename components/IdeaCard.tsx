@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
+import { useApiClient } from "@/lib/api-client";
+import { useUser } from "@clerk/nextjs";
 
 export interface Idea {
   id: string;
@@ -23,15 +26,149 @@ export interface Idea {
 
 interface IdeaCardProps {
   idea: Idea;
+  onUpvote?: (ideaId: string, newUpvoteCount: number) => void;
 }
 
-export default function IdeaCard({ idea }: IdeaCardProps) {
+export default function IdeaCard({ idea, onUpvote }: IdeaCardProps) {
+  const apiClient = useApiClient();
+  const { user } = useUser();
+  const [upvotes, setUpvotes] = useState(idea.upvotes);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
+
+  // Check upvote status when component loads or when idea/user changes
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!idea.id || !user?.id) {
+        // If not authenticated, user can't have upvoted
+        setHasUpvoted(false);
+        return;
+      }
+
+      try {
+        const response = await apiClient.checkUpvoteStatus(idea.id);
+        
+        // Handle response structure
+        let hasUpvotedValue = false;
+        if (response && typeof response === "object") {
+          const resp = response as Record<string, unknown>;
+          if (typeof resp.has_upvoted === "boolean") {
+            hasUpvotedValue = resp.has_upvoted;
+          } else if (resp.data && typeof resp.data === "object") {
+            const data = resp.data as Record<string, unknown>;
+            if (typeof data.has_upvoted === "boolean") {
+              hasUpvotedValue = data.has_upvoted;
+            }
+          }
+        }
+        
+        setHasUpvoted(hasUpvotedValue);
+      } catch (error) {
+        // If endpoint doesn't exist or user is not authenticated, default to false
+        console.warn("Could not check upvote status:", error);
+        setHasUpvoted(false);
+      }
+    };
+
+    if (idea.id && user?.id) {
+      checkStatus();
+    } else {
+      setHasUpvoted(false);
+    }
+  }, [idea.id, user?.id, apiClient]);
+
   const statusColors = {
     draft: "bg-slate-700 text-slate-300",
     active: "bg-blue-900 text-blue-300",
     validated: "bg-teal-900 text-teal-300",
     launched: "bg-green-900 text-green-300",
     posted: "bg-green-600 text-green-100",
+  };
+
+  const handleUpvoteToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent card navigation
+
+    if (isUpvoting || !user?.id) {
+      if (!user?.id) {
+        // Could show a toast or alert here
+        console.log("Please sign in to upvote ideas");
+      }
+      return;
+    }
+
+    setIsUpvoting(true);
+    try {
+      let response;
+      let newUpvotes: number;
+
+      if (hasUpvoted) {
+        // Remove upvote
+        response = await apiClient.removeUpvote(idea.id);
+      } else {
+        // Add upvote
+        response = await apiClient.upvoteIdea(idea.id);
+      }
+      
+      // Handle response structure
+      let updatedIdeaData: unknown = null;
+      if (response && typeof response === "object") {
+        const resp = response as Record<string, unknown>;
+        if (resp.data && typeof resp.data === "object") {
+          updatedIdeaData = resp.data;
+        } else {
+          updatedIdeaData = response;
+        }
+      } else {
+        updatedIdeaData = response;
+      }
+
+      if (updatedIdeaData && typeof updatedIdeaData === "object") {
+        const updatedItem = updatedIdeaData as Record<string, unknown>;
+        newUpvotes = Number(
+          updatedItem.upvotes || updatedItem.upvotes_count || updatedItem.upvote_count || upvotes
+        );
+        
+        // Check if response includes upvote status
+        const upvotedStatus = updatedItem.upvoted !== undefined 
+          ? Boolean(updatedItem.upvoted)
+          : !hasUpvoted; // Toggle if not provided
+        
+        setUpvotes(newUpvotes);
+        setHasUpvoted(upvotedStatus);
+        
+        // Call parent callback if provided
+        if (onUpvote) {
+          onUpvote(idea.id, newUpvotes);
+        }
+      } else {
+        // Fallback: optimistically update
+        if (hasUpvoted) {
+          setUpvotes((prev) => prev - 1);
+        } else {
+          setUpvotes((prev) => prev + 1);
+        }
+        setHasUpvoted(!hasUpvoted);
+        if (onUpvote) {
+          onUpvote(idea.id, hasUpvoted ? upvotes - 1 : upvotes + 1);
+        }
+      }
+    } catch (error: unknown) {
+      console.error("Error toggling upvote:", error);
+      
+      // Handle specific errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("already upvoted")) {
+        setHasUpvoted(true); // Sync state
+        console.warn("You have already upvoted this idea");
+      } else if (errorMessage.includes("not upvoted")) {
+        setHasUpvoted(false); // Sync state
+        console.warn("You have not upvoted this idea");
+      }
+      // Don't show alert, just log the error
+    } finally {
+      setIsUpvoting(false);
+    }
   };
 
   return (
@@ -103,7 +240,16 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
             {/* Footer */}
             <div className="mt-4 flex items-center justify-between border-t border-slate-700 pt-4">
               <div className="flex items-center space-x-4 text-sm text-slate-400">
-                <div className="flex items-center space-x-1">
+                <button
+                  onClick={handleUpvoteToggle}
+                  disabled={isUpvoting || !user}
+                  className={`flex items-center space-x-1 rounded-lg px-3 py-1.5 transition-all ${
+                    hasUpvoted
+                      ? "bg-[#14b8a6]/20 text-[#14b8a6] border border-[#14b8a6]/30 hover:bg-[#14b8a6]/30"
+                      : "hover:bg-slate-700/50 text-slate-400 hover:text-white"
+                  } ${isUpvoting || !user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  title={!user ? "Sign in to upvote" : hasUpvoted ? "Remove upvote" : "Upvote"}
+                >
                   <svg
                     className="h-4 w-4"
                     fill="none"
@@ -115,8 +261,11 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
                   >
                     <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                   </svg>
-                  <span>{idea.upvotes}</span>
-                </div>
+                  <span>{upvotes}</span>
+                  {hasUpvoted && (
+                    <span className="ml-1 text-[#14b8a6]">✓</span>
+                  )}
+                </button>
                 <div className="flex items-center space-x-1">
                   <svg
                     className="h-4 w-4"
