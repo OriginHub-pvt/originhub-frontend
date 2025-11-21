@@ -6,14 +6,13 @@ import { useUser } from "@clerk/nextjs";
 import { Idea } from "@/components/IdeaCard";
 import { useApiClient } from "@/lib/api-client";
 import EditIdeaModal from "@/components/EditIdeaModal";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Button } from "@/components/ui/moving-border";
 import CommentsList from "@/components/CommentsList";
 
 export default function IdeaDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isSignedIn } = useUser();
+  const { user } = useUser();
   const apiClient = useApiClient();
   const ideaId = params.ideaId as string;
 
@@ -47,7 +46,7 @@ export default function IdeaDetailPage() {
 
       try {
         const response = await apiClient.checkUpvoteStatus(ideaId);
-        
+
         // Handle response structure
         let hasUpvotedValue = false;
         if (response && typeof response === "object") {
@@ -61,7 +60,7 @@ export default function IdeaDetailPage() {
             }
           }
         }
-        
+
         setHasUpvoted(hasUpvotedValue);
       } catch (error) {
         // If endpoint doesn't exist or user is not authenticated, default to false
@@ -171,44 +170,50 @@ export default function IdeaDetailPage() {
           if (hasIncrementedViewsRef.current !== ideaId) {
             // Mark that we're incrementing for this ideaId (set synchronously to prevent double calls)
             hasIncrementedViewsRef.current = ideaId;
-            
+
             // Use an IIFE to ensure the increment happens asynchronously but only once
             (async () => {
               try {
                 const viewResponse = await apiClient.incrementIdeaViews(ideaId);
-              
-              // Handle response structure
-              let updatedIdeaData: unknown = null;
-              if (viewResponse && typeof viewResponse === "object") {
-                const resp = viewResponse as Record<string, unknown>;
-                if (resp.data && typeof resp.data === "object") {
-                  updatedIdeaData = resp.data;
+
+                // Handle response structure
+                let updatedIdeaData: unknown = null;
+                if (viewResponse && typeof viewResponse === "object") {
+                  const resp = viewResponse as Record<string, unknown>;
+                  if (resp.data && typeof resp.data === "object") {
+                    updatedIdeaData = resp.data;
+                  } else {
+                    updatedIdeaData = viewResponse;
+                  }
                 } else {
                   updatedIdeaData = viewResponse;
                 }
-              } else {
-                updatedIdeaData = viewResponse;
-              }
 
-              // Update idea with new view count if response is valid
-              if (updatedIdeaData && typeof updatedIdeaData === "object") {
-                const updatedItem = updatedIdeaData as Record<string, unknown>;
-                const newViews = Number(
-                  updatedItem.views || updatedItem.views_count || updatedItem.view_count || formattedIdea.views + 1
-                );
-                
-                // Update the idea with incremented view count
-                setIdea((prev) => {
-                  if (!prev) return prev;
-                  return { ...prev, views: newViews };
-                });
-              } else {
-                // Fallback: optimistically increment views
-                setIdea((prev) => {
-                  if (!prev) return prev;
-                  return { ...prev, views: prev.views + 1 };
-                });
-              }
+                // Update idea with new view count if response is valid
+                if (updatedIdeaData && typeof updatedIdeaData === "object") {
+                  const updatedItem = updatedIdeaData as Record<
+                    string,
+                    unknown
+                  >;
+                  const newViews = Number(
+                    updatedItem.views ||
+                      updatedItem.views_count ||
+                      updatedItem.view_count ||
+                      formattedIdea.views + 1
+                  );
+
+                  // Update the idea with incremented view count
+                  setIdea((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, views: newViews };
+                  });
+                } else {
+                  // Fallback: optimistically increment views
+                  setIdea((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, views: prev.views + 1 };
+                  });
+                }
               } catch (viewError) {
                 // Silently fail - views are not critical, don't block page load
                 console.warn("Failed to increment views:", viewError);
@@ -293,7 +298,7 @@ export default function IdeaDetailPage() {
         // Add upvote
         response = await apiClient.upvoteIdea(idea.id);
       }
-      
+
       // Handle response structure
       let updatedIdeaData: unknown = null;
       if (response && typeof response === "object") {
@@ -310,14 +315,18 @@ export default function IdeaDetailPage() {
       if (updatedIdeaData && typeof updatedIdeaData === "object") {
         const updatedItem = updatedIdeaData as Record<string, unknown>;
         newUpvotes = Number(
-          updatedItem.upvotes || updatedItem.upvotes_count || updatedItem.upvote_count || idea.upvotes
+          updatedItem.upvotes ||
+            updatedItem.upvotes_count ||
+            updatedItem.upvote_count ||
+            idea.upvotes
         );
-        
+
         // Check if response includes upvote status
-        const upvotedStatus = updatedItem.upvoted !== undefined 
-          ? Boolean(updatedItem.upvoted)
-          : !hasUpvoted; // Toggle if not provided
-        
+        const upvotedStatus =
+          updatedItem.upvoted !== undefined
+            ? Boolean(updatedItem.upvoted)
+            : !hasUpvoted; // Toggle if not provided
+
         // Update the idea with new upvote count
         setIdea((prev) => {
           if (!prev) return prev;
@@ -328,15 +337,19 @@ export default function IdeaDetailPage() {
         // Fallback: optimistically update
         setIdea((prev) => {
           if (!prev) return prev;
-          return { ...prev, upvotes: hasUpvoted ? prev.upvotes - 1 : prev.upvotes + 1 };
+          return {
+            ...prev,
+            upvotes: hasUpvoted ? prev.upvotes - 1 : prev.upvotes + 1,
+          };
         });
         setHasUpvoted(!hasUpvoted);
       }
     } catch (error: unknown) {
       console.error("Error toggling upvote:", error);
-      
+
       // Handle specific errors
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (errorMessage.includes("already upvoted")) {
         setHasUpvoted(true); // Sync state
         console.warn("You have already upvoted this idea");
@@ -378,14 +391,6 @@ export default function IdeaDetailPage() {
       }
       setIsDeleteModalOpen(false);
     }
-  };
-
-  const statusColors = {
-    draft: "bg-slate-700 text-slate-300",
-    active: "bg-blue-900 text-blue-300",
-    validated: "bg-teal-900 text-teal-300",
-    launched: "bg-green-900 text-green-300",
-    posted: "bg-green-600 text-green-100",
   };
 
   if (isLoading) {
@@ -431,15 +436,15 @@ export default function IdeaDetailPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-6 px-2 py-6">
-      {/* Header with Back Button and Edit Button */}
-      <div className="flex items-center justify-between">
+    <div className="flex h-full flex-col gap-4 px-4 py-4 max-w-6xl mx-auto w-full">
+      {/* Compact Header with Back Button and Actions */}
+      <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:border-[#14b8a6] hover:text-[#14b8a6]"
+          className="group flex items-center gap-2 rounded-lg border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm px-3 py-2 text-sm font-medium text-slate-300 transition-all hover:border-[#14b8a6]/50 hover:bg-slate-800 hover:text-[#14b8a6]"
         >
           <svg
-            className="h-4 w-4"
+            className="h-4 w-4 transition-transform group-hover:-translate-x-1"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -452,18 +457,18 @@ export default function IdeaDetailPage() {
           Back
         </button>
         {isOwner && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               as="button"
               onClick={() => setIsEditModalOpen(true)}
-              borderRadius="1.75rem"
-              className="border-white/10 bg-slate-900 text-white shadow-[0_0_45px_rgba(20,184,166,0.35)]"
-              containerClassName="h-12"
+              borderRadius="1rem"
+              className="border-white/10 bg-slate-800/80 text-white shadow-[0_0_20px_rgba(20,184,166,0.2)]"
+              containerClassName="h-9"
               borderClassName="bg-gradient-to-r from-[#0e3a5f] via-[#14b8a6] to-[#0e3a5f]"
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
+              <span className="flex items-center gap-1.5 text-xs font-medium">
                 <svg
-                  className="h-4 w-4"
+                  className="h-3.5 w-3.5"
                   fill="none"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -473,15 +478,15 @@ export default function IdeaDetailPage() {
                 >
                   <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Edit Idea
+                Edit
               </span>
             </Button>
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:border-red-500/50 hover:bg-red-500/20"
+              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition-all hover:border-red-500/50 hover:bg-red-500/20"
             >
               <svg
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -497,77 +502,69 @@ export default function IdeaDetailPage() {
         )}
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1">
-        <BackgroundGradient className="rounded-2xl bg-slate-800 p-8 shadow-xl">
-          {/* Title and Status */}
-          <div className="mb-6 flex items-start justify-between border-b border-slate-700 pb-6">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-white">{idea.title}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-400">
-                <span>by {idea.author}</span>
-                <span>·</span>
-                <span>{idea.createdAt.toLocaleDateString()}</span>
-                <span>·</span>
-                <span>{idea.views} views</span>
-                <span>·</span>
-                <span>{idea.upvotes} upvotes</span>
+      {/* Main Content - Compact Layout */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Hero Section with Title and Stats */}
+        <div className="relative mb-6 overflow-hidden rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 p-6 shadow-2xl border border-slate-700/50">
+          <div className="relative z-10">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="mb-3 text-3xl font-bold leading-tight text-white md:text-4xl">
+                  {idea.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="font-medium text-slate-300">
+                      {idea.author}
+                    </span>
+                  </div>
+                  <span className="text-slate-600">·</span>
+                  <div className="flex items-center gap-1.5">
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{idea.createdAt.toLocaleDateString()}</span>
+                  </div>
+                </div>
               </div>
+              {idea.link && (
+                <span className="flex-shrink-0 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-green-400 border border-green-500/30">
+                  ✓ Posted
+                </span>
+              )}
             </div>
-            {/* Show "Posted" status only if link exists, otherwise show nothing */}
-            {idea.link && (
-              <span
-                className={`ml-4 rounded-full px-4 py-2 text-sm font-medium capitalize ${statusColors.posted}`}
-              >
-                Posted
-              </span>
-            )}
           </div>
+        </div>
 
-          {/* Description Section */}
-          <section className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-white">
-              Description
-            </h2>
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {idea.description}
-              </p>
-            </div>
-          </section>
-
-          {/* Problem Section */}
-          <section className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-white">
-              Problem Statement
-            </h2>
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {idea.problem}
-              </p>
-            </div>
-          </section>
-
-          {/* Solution Section */}
-          <section className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-white">Solution</h2>
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {idea.solution}
-              </p>
-            </div>
-          </section>
-
-          {/* Solution Link Section (only shown if link exists) */}
-          {idea.link && (
-            <section className="mb-8">
-              <h2 className="mb-3 text-xl font-semibold text-white">
-                Startup Link
-              </h2>
-              <div className="rounded-lg bg-gradient-to-r from-[#14b8a6]/10 to-[#0e3a5f]/10 p-6 border border-[#14b8a6]/30">
-                <div className="flex items-center gap-3">
+        {/* Content Sections - Side by Side Layout */}
+        <div className="grid gap-4 lg:grid-cols-3 mb-6">
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Description */}
+            <section className="rounded-xl bg-slate-800/60 backdrop-blur-sm p-5 border border-slate-700/50 shadow-lg">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#14b8a6]/20">
                   <svg
-                    className="h-6 w-6 text-[#14b8a6] flex-shrink-0"
+                    className="h-4 w-4 text-[#14b8a6]"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -575,30 +572,105 @@ export default function IdeaDetailPage() {
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-400 mb-2">
-                      This idea has an existing solution:
-                    </p>
-                    <a
-                      href={idea.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#14b8a6] hover:text-[#0d9488] font-medium break-all underline transition-colors"
+                </div>
+                <h2 className="text-lg font-semibold text-white">
+                  Description
+                </h2>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap">
+                {idea.description}
+              </p>
+            </section>
+
+            {/* Problem */}
+            <section className="rounded-xl bg-gradient-to-br from-purple-950/20 to-indigo-950/20 backdrop-blur-sm p-5 border border-purple-500/20 shadow-lg">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20">
+                  <svg
+                    className="h-4 w-4 text-purple-400"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-semibold text-white">
+                  Problem Statement
+                </h2>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap">
+                {idea.problem}
+              </p>
+            </section>
+
+            {/* Solution */}
+            <section className="rounded-xl bg-gradient-to-br from-teal-950/20 to-cyan-950/20 backdrop-blur-sm p-5 border border-[#14b8a6]/20 shadow-lg">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#14b8a6]/20">
+                  <svg
+                    className="h-4 w-4 text-[#14b8a6]"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-semibold text-white">Solution</h2>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap">
+                {idea.solution}
+              </p>
+            </section>
+
+            {/* Solution Link */}
+            {idea.link && (
+              <section className="rounded-xl bg-gradient-to-r from-[#14b8a6]/10 via-[#14b8a6]/5 to-[#0e3a5f]/10 backdrop-blur-sm p-5 border border-[#14b8a6]/30 shadow-lg">
+                <div className="mb-3 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#14b8a6]/20">
+                    <svg
+                      className="h-4 w-4 text-[#14b8a6]"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                      {idea.link}
-                    </a>
+                      <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
                   </div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Startup Link
+                  </h2>
+                </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <a
                     href={idea.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d9488] transition-colors whitespace-nowrap"
+                    className="flex-1 text-sm text-[#14b8a6] hover:text-[#0d9488] font-medium break-all underline transition-colors"
                   >
-                    <span>Visit Solution</span>
+                    {idea.link}
+                  </a>
+                  <a
+                    href={idea.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#14b8a6] to-[#0d9488] px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-[#14b8a6]/25 transition-all hover:shadow-xl hover:shadow-[#14b8a6]/40 hover:scale-105 whitespace-nowrap"
+                  >
+                    <span>Visit</span>
                     <svg
-                      className="h-4 w-4"
+                      className="h-3.5 w-3.5"
                       fill="none"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -610,38 +682,18 @@ export default function IdeaDetailPage() {
                     </svg>
                   </a>
                 </div>
-              </div>
-            </section>
-          )}
+              </section>
+            )}
+          </div>
 
-          {/* Metadata Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Market Size */}
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <h3 className="mb-2 text-sm font-medium uppercase tracking-wider text-slate-400">
-                Market Size
-              </h3>
-              <p className="text-2xl font-bold text-white">{idea.marketSize}</p>
-            </div>
-
-            {/* Upvotes */}
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <h3 className="mb-2 text-sm font-medium uppercase tracking-wider text-slate-400">
-                Upvotes
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleUpvoteToggle}
-                  disabled={isUpvoting || !user}
-                  className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-all ${
-                    hasUpvoted
-                      ? "bg-[#14b8a6]/20 text-[#14b8a6] border border-[#14b8a6]/30 hover:bg-[#14b8a6]/30"
-                      : "hover:bg-slate-800 text-white"
-                  } ${isUpvoting || !user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                  title={!user ? "Sign in to upvote" : hasUpvoted ? "Remove upvote" : "Upvote"}
-                >
+          {/* Sidebar Column */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Tags */}
+            <section className="rounded-xl bg-slate-800/60 backdrop-blur-sm p-5 border border-slate-700/50 shadow-lg">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#14b8a6]/20">
                   <svg
-                    className="h-6 w-6 text-[#14b8a6]"
+                    className="h-4 w-4 text-[#14b8a6]"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -649,54 +701,116 @@ export default function IdeaDetailPage() {
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                    <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
-                  <p className="text-2xl font-bold">{idea.upvotes}</p>
-                  {hasUpvoted && (
-                    <span className="text-[#14b8a6] text-lg">✓</span>
-                  )}
-                </button>
+                </div>
+                <h2 className="text-lg font-semibold text-white">Tags</h2>
               </div>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                {idea.tags.length > 0 ? (
+                  idea.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-lg bg-[#14b8a6]/15 px-3 py-1.5 text-xs font-medium text-[#14b8a6] border border-[#14b8a6]/30 hover:bg-[#14b8a6]/25 transition-colors"
+                    >
+                      {tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-500">No tags</span>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
 
-            {/* Views */}
-            <div className="rounded-lg bg-slate-900/70 p-6 border border-slate-700">
-              <h3 className="mb-2 text-sm font-medium uppercase tracking-wider text-slate-400">
+        {/* Stats Bar - Before Comments */}
+        <div className="mb-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 p-5 shadow-xl border border-slate-700/50">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Statistics
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <button
+              onClick={handleUpvoteToggle}
+              disabled={isUpvoting || !user}
+              className={`group flex flex-col items-center gap-2 rounded-lg px-4 py-4 transition-all ${
+                hasUpvoted
+                  ? "bg-[#14b8a6]/20 text-[#14b8a6] border border-[#14b8a6]/40"
+                  : "hover:bg-slate-800/50 text-slate-300 border border-slate-700/50"
+              } ${
+                isUpvoting || !user
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer"
+              }`}
+              title={
+                !user
+                  ? "Sign in to upvote"
+                  : hasUpvoted
+                  ? "Remove upvote"
+                  : "Upvote"
+              }
+            >
+              <svg
+                className={`h-6 w-6 transition-transform ${
+                  hasUpvoted
+                    ? "text-[#14b8a6]"
+                    : "text-slate-400 group-hover:text-[#14b8a6]"
+                }`}
+                fill={hasUpvoted ? "currentColor" : "none"}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+              </svg>
+              <span className="text-2xl font-bold">{idea.upvotes}</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500">
+                Upvotes
+              </span>
+            </button>
+            <div className="flex flex-col items-center gap-2 rounded-lg px-4 py-4 border border-slate-700/50 bg-slate-800/30">
+              <svg
+                className="h-6 w-6 text-[#14b8a6]"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span className="text-2xl font-bold text-white">
+                {idea.views}
+              </span>
+              <span className="text-xs uppercase tracking-wider text-slate-500">
                 Views
-              </h3>
-              <div className="flex items-center gap-2">
-                <svg
-                  className="h-6 w-6 text-[#14b8a6]"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <p className="text-2xl font-bold text-white">{idea.views}</p>
-              </div>
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-2 rounded-lg px-4 py-4 border border-slate-700/50 bg-slate-800/30">
+              <svg
+                className="h-6 w-6 text-[#14b8a6]"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="text-2xl font-bold text-white">
+                {idea.marketSize}
+              </span>
+              <span className="text-xs uppercase tracking-wider text-slate-500">
+                Market Size
+              </span>
             </div>
           </div>
-
-          {/* Tags Section */}
-          <section className="mt-8">
-            <h2 className="mb-4 text-xl font-semibold text-white">Tags</h2>
-            <div className="flex flex-wrap gap-3">
-              {idea.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-[#14b8a6]/15 px-4 py-2 text-sm font-medium text-[#14b8a6] border border-[#14b8a6]/30"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </section>
-        </BackgroundGradient>
+        </div>
 
         {/* Comments Section */}
         <CommentsList ideaId={idea.id} ideaOwnerId={idea.user_id} />
