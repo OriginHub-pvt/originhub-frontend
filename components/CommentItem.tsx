@@ -29,8 +29,7 @@ export default function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
 
   // Check if current user can delete this comment
-  const canDelete =
-    user?.id === comment.user_id || user?.id === ideaOwnerId;
+  const canDelete = user?.id === comment.user_id || user?.id === ideaOwnerId;
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this comment?")) {
@@ -44,9 +43,7 @@ export default function CommentItem({
     } catch (error) {
       console.error("Error deleting comment:", error);
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to delete comment";
+        error instanceof Error ? error.message : "Failed to delete comment";
       alert(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -66,7 +63,10 @@ export default function CommentItem({
       return comment.author_name;
     }
     if (comment.author && typeof comment.author === "object") {
-      const authorObj = comment.author as { first_name?: string; last_name?: string };
+      const authorObj = comment.author as {
+        first_name?: string;
+        last_name?: string;
+      };
       const firstName = authorObj.first_name || "";
       const lastName = authorObj.last_name || "";
       const fullName = `${firstName} ${lastName}`.trim();
@@ -85,18 +85,20 @@ export default function CommentItem({
 
   return (
     <div className={`${isReply ? "ml-8 mt-3" : "mb-4"}`}>
-      <div className={`rounded-lg border border-slate-700 bg-slate-900/70 p-4 ${
-        isReply ? "border-l-2 border-l-[#14b8a6]/50" : "border-l-4 border-l-[#14b8a6]"
-      }`}>
+      <div
+        className={`rounded-lg border border-slate-700 bg-slate-900/70 p-4 ${
+          isReply
+            ? "border-l-2 border-l-[#14b8a6]/50"
+            : "border-l-4 border-l-[#14b8a6]"
+        }`}
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-white">
               {isIdeaOwner && "👑 "}
               {getAuthorName()}
             </span>
-            {isReply && (
-              <span className="text-xs text-slate-500">replied</span>
-            )}
+            {isReply && <span className="text-xs text-slate-500">replied</span>}
           </div>
           <span className="text-xs text-slate-500">
             {commentDate.toLocaleDateString()} at{" "}
@@ -160,4 +162,3 @@ export default function CommentItem({
     </div>
   );
 }
-
