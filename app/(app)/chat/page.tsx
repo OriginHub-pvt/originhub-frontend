@@ -161,8 +161,6 @@ export default function ChatPage() {
 
           if (emptyChatId) {
             setChatId(emptyChatId);
-            // Update URL to include the chat ID
-            window.history.replaceState({}, "", `/chat?chatId=${emptyChatId}`);
             // Show welcome message for empty chat
             setMessages([
               {
@@ -201,8 +199,6 @@ export default function ChatPage() {
 
           if (newChatId) {
             setChatId(newChatId);
-            // Update URL to include the chat ID
-            window.history.replaceState({}, "", `/chat?chatId=${newChatId}`);
             // Show welcome message
             setMessages([
               {
