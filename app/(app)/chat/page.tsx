@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
+import { useApiClient } from "@/lib/api-client";
 
 interface Message {
   id: string;
@@ -19,6 +22,9 @@ const inputPlaceholders = [
 ];
 
 export default function ChatPage() {
+  const { user } = useUser();
+  const apiClient = useApiClient();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -30,7 +36,192 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize chat on page load or when user changes
+  useEffect(() => {
+    if (!user?.id) return; // Wait for user authentication
+
+    const chatIdParam = searchParams.get("chatId");
+    const isNewChat = searchParams.get("new") === "true";
+
+    // If there's a chatId in URL, load that chat's messages
+    if (chatIdParam && chatIdParam !== chatId) {
+      // Load existing chat - fetch all messages for this chat
+      setIsLoadingChat(true);
+      setError(null);
+      setChatId(chatIdParam);
+
+      apiClient
+        .getChatMessages(chatIdParam)
+        .then((response) => {
+          // Handle response structure: { success: true, data: { messages: [...] }, message: "..." }
+          let messagesData: unknown[] = [];
+          if (
+            response?.data?.messages &&
+            Array.isArray(response.data.messages)
+          ) {
+            messagesData = response.data.messages;
+          } else if (Array.isArray(response?.messages)) {
+            messagesData = response.messages;
+          } else if (Array.isArray(response?.data)) {
+            messagesData = response.data;
+          } else if (Array.isArray(response)) {
+            messagesData = response;
+          }
+
+          // Transform backend message format to frontend Message format
+          const transformedMessages: Message[] = messagesData.map(
+            (msg: unknown) => {
+              const message = msg as {
+                id?: string;
+                chat_id?: string;
+                sender?: string;
+                role?: string;
+                message?: string;
+                content?: string;
+                created_at?: string;
+                timestamp?: string;
+              };
+
+              // Map sender/role: "user" -> "user", "assistant" -> "assistant"
+              const role =
+                (message.sender || message.role || "user") === "user"
+                  ? "user"
+                  : "assistant";
+
+              // Get content from either "message" or "content" field
+              const content = message.message || message.content || "";
+
+              // Parse timestamp
+              const timestamp =
+                message.created_at || message.timestamp
+                  ? new Date(message.created_at || message.timestamp || "")
+                  : new Date();
+
+              return {
+                id: message.id || Date.now().toString() + Math.random(),
+                role: role as "user" | "assistant",
+                content: content,
+                timestamp: timestamp,
+              };
+            }
+          );
+
+          // If no messages found, show welcome message
+          if (transformedMessages.length === 0) {
+            setMessages([
+              {
+                id: "1",
+                role: "assistant",
+                content: "Chat loaded. Continue the conversation below.",
+                timestamp: new Date(),
+              },
+            ]);
+          } else {
+            setMessages(transformedMessages);
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading chat messages:", error);
+          setError("Failed to load chat messages. Please try again.");
+          // Show welcome message as fallback
+          setMessages([
+            {
+              id: "1",
+              role: "assistant",
+              content: "Chat loaded. Continue the conversation below.",
+              timestamp: new Date(),
+            },
+          ]);
+        })
+        .finally(() => {
+          setIsLoadingChat(false);
+        });
+    } else if (!chatId && !isNewChat) {
+      // No chatId in URL and not explicitly creating new chat
+      // Initialize with empty chat (reuses existing empty chat or creates new)
+      setIsLoadingChat(true);
+      setError(null);
+
+      apiClient
+        .getEmptyChat()
+        .then((response) => {
+          // Extract chat ID from response
+          // Expected: { id: "chat-uuid", title: "..." } or { data: { id: "...", title: "..." } }
+          let emptyChatId: string | null = null;
+          if (response?.data?.id) {
+            emptyChatId = response.data.id;
+          } else if (response?.id) {
+            emptyChatId = response.id;
+          }
+
+          if (emptyChatId) {
+            setChatId(emptyChatId);
+            // Show welcome message for empty chat
+            setMessages([
+              {
+                id: "1",
+                role: "assistant",
+                content:
+                  "Hello! I'm your AI startup ideation assistant. Share a real-world problem you've encountered, and I'll help you transform it into a viable startup idea. What problem would you like to explore?",
+                timestamp: new Date(),
+              },
+            ]);
+          } else {
+            throw new Error("Failed to get chat ID from server");
+          }
+        })
+        .catch((error) => {
+          console.error("Error initializing chat:", error);
+          setError("Failed to initialize chat. Please try again.");
+        })
+        .finally(() => {
+          setIsLoadingChat(false);
+        });
+    } else if (isNewChat && !chatId) {
+      // Explicitly creating new chat - call the empty chat endpoint
+      setIsLoadingChat(true);
+      setError(null);
+
+      apiClient
+        .getEmptyChat()
+        .then((response) => {
+          let newChatId: string | null = null;
+          if (response?.data?.id) {
+            newChatId = response.data.id;
+          } else if (response?.id) {
+            newChatId = response.id;
+          }
+
+          if (newChatId) {
+            setChatId(newChatId);
+            // Show welcome message
+            setMessages([
+              {
+                id: "1",
+                role: "assistant",
+                content:
+                  "Hello! I'm your AI startup ideation assistant. Share a real-world problem you've encountered, and I'll help you transform it into a viable startup idea. What problem would you like to explore?",
+                timestamp: new Date(),
+              },
+            ]);
+          } else {
+            throw new Error("Failed to get chat ID from server");
+          }
+        })
+        .catch((error) => {
+          console.error("Error creating new chat:", error);
+          setError("Failed to create new chat. Please try again.");
+        })
+        .finally(() => {
+          setIsLoadingChat(false);
+        });
+    }
+  }, [searchParams, chatId, apiClient, user?.id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,6 +234,12 @@ export default function ChatPage() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Ensure we have a chat_id before sending messages
+    if (!chatId) {
+      setError("Chat not initialized. Please wait...");
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -51,26 +248,79 @@ export default function ChatPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageText = input.trim();
     setInput("");
     setIsLoading(true);
+    setError(null);
 
-    setTimeout(() => {
+    try {
+      // Get user ID from Clerk
+      const userId = user?.id;
+
+      if (!userId) {
+        throw new Error("You must be signed in to send messages");
+      }
+
+      // Always send chat_id with the message (required by backend)
+      const response = await apiClient.sendChatMessage(messageText, chatId);
+
+      // Debug: Log the response to see what we're getting
+      console.log("Chat API Response:", response);
+
+      // Handle response structure
+      // Expected formats:
+      // - { success: true, data: { reply: "..." }, message: "..." }
+      // - { reply: "..." }
+      // - { data: { reply: "..." } }
+      let replyText = "";
+
+      if (response) {
+        if (response.data?.reply) {
+          // Nested structure: { success: true, data: { reply: "..." } } or { data: { reply: "..." } }
+          replyText = response.data.reply;
+        } else if (response.reply) {
+          // Flat structure: { reply: "..." }
+          replyText = response.reply;
+        } else {
+          // Log the full response to help debug
+          console.error("Unexpected response format:", response);
+          throw new Error("Unexpected response format from server");
+        }
+      }
+
+      if (!replyText) {
+        console.error("No reply text found in response:", response);
+        throw new Error("No reply received from server");
+      }
+
+      console.log("Extracted reply:", replyText);
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `I understand you're facing this problem: "${userMessage.content}". Let me analyze this and help you brainstorm some startup ideas. 
-
-Based on your input, here are some potential startup concepts:
-1. A platform that addresses the core issue
-2. A service that simplifies the process
-3. A solution that leverages technology to solve this problem
-
-Would you like me to elaborate on any of these ideas or explore different angles?`,
+        content: replyText,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err: unknown) {
+      console.error("Error sending chat message:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to send message. Please try again.";
+      setError(errorMessage);
+
+      // Show error message in chat
+      const errorAssistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorAssistantMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -104,6 +354,16 @@ Would you like me to elaborate on any of these ideas or explore different angles
 
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
         <div className="mx-auto w-full max-w-5xl space-y-6">
+          {error && (
+            <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+              {error}
+            </div>
+          )}
+          {isLoadingChat && (
+            <div className="rounded-lg border border-white/10 bg-slate-800/50 p-4 text-sm text-white/70">
+              Loading chat...
+            </div>
+          )}
           {messages.map((message) => (
             <div
               key={message.id}

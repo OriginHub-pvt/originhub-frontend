@@ -175,8 +175,109 @@ export const useApiClient = () => {
         },
 
         // Send chat message
-        sendChatMessage: async (message: string) => {
-            const response = await api.post('/chat', { message });
+        sendChatMessage: async (message: string, chatId?: string) => {
+            const requestBody: Record<string, unknown> = { message };
+            // Only include chat_id if it exists (for continuing existing chat)
+            if (chatId) {
+                requestBody.chat_id = chatId;
+            }
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post('/chat', requestBody);
+            return response.data;
+        },
+
+        // Get chat history
+        getChatHistory: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get('/chat/list');
+            return response.data;
+        },
+
+        // Create new chat
+        createNewChat: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post('/chat/new');
+            return response.data;
+        },
+
+        // Get or create empty chat (reuses existing empty chat or creates new)
+        getEmptyChat: async () => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get('/chat/empty');
+            return response.data;
+        },
+
+        // Delete a chat
+        deleteChat: async (chatId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/chat/${chatId}`);
+            return response.data;
+        },
+
+        // Get messages for a specific chat
+        getChatMessages: async (chatId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get(`/chat/${chatId}/messages`);
+            return response.data;
+        },
+
+        // Increment idea views (public endpoint, no auth required)
+        incrementIdeaViews: async (ideaId: string) => {
+            // This is a public endpoint, so we don't need auth headers
+            // Use a separate axios instance without auth for this call
+            const publicApi = axios.create({
+                baseURL: API_BASE_URL,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const response = await publicApi.post(`/ideas/${ideaId}/view`);
+            return response.data;
+        },
+
+        // Upvote idea (requires authentication - X-User-Id header is automatically added)
+        upvoteIdea: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post(`/ideas/${ideaId}/upvote`);
+            return response.data;
+        },
+
+        // Remove upvote from idea (requires authentication - X-User-Id header is automatically added)
+        removeUpvote: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/ideas/${ideaId}/upvote`);
+            return response.data;
+        },
+
+        // Check if current user has upvoted an idea (requires authentication)
+        checkUpvoteStatus: async (ideaId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.get(`/ideas/${ideaId}/upvote-status`);
+            return response.data;
+        },
+
+        // Get all comments for an idea (public endpoint)
+        getIdeaComments: async (ideaId: string) => {
+            const response = await api.get(`/ideas/${ideaId}/comments`);
+            return response.data;
+        },
+
+        // Create a comment (requires authentication)
+        // parentCommentId is optional - if provided, creates a reply to that comment
+        createComment: async (ideaId: string, content: string, parentCommentId?: string | null) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const requestBody: Record<string, unknown> = { content };
+            if (parentCommentId) {
+                requestBody.parent_comment_id = parentCommentId;
+            }
+            const response = await api.post(`/ideas/${ideaId}/comments`, requestBody);
+            return response.data;
+        },
+
+        // Delete a comment (requires authentication)
+        deleteComment: async (ideaId: string, commentId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.delete(`/ideas/${ideaId}/comments/${commentId}`);
             return response.data;
         },
     }), [api, user]);
