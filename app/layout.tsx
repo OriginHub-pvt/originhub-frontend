@@ -32,7 +32,11 @@ export default function RootLayout({
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      // Configure domain for production to avoid certificate errors
+      domain={process.env.NEXT_PUBLIC_CLERK_DOMAIN}
+    >
       <html lang="en" className="scroll-smooth">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-slate-900`}
