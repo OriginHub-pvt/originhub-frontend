@@ -25,7 +25,7 @@ ENV HOSTNAME="0.0.0.0"
 
 # Runtime env stubs (will be overridden by Kubernetes Secrets at runtime)
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
-ENV NEXT_PUBLIC_API_URL=""
+ENV NEXT_PUBLIC_API_URL="http://backend-service"
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs \
