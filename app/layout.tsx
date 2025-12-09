@@ -20,13 +20,19 @@ export const metadata: Metadata = {
   keywords: ["startup", "AI", "ideas", "entrepreneurship", "innovation"],
 };
 
+// Force dynamic rendering to prevent build-time Clerk key requirement
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Get publishable key from env (empty string is allowed during build)
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey}>
       <html lang="en" className="scroll-smooth">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-slate-900`}
