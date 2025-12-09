@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  ChangeEvent,
+  FormEvent,
+  Suspense,
+} from "react";
 import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
@@ -21,7 +28,7 @@ const inputPlaceholders = [
   "Suggest a B2B tool for remote teams",
 ];
 
-export default function ChatPage() {
+function ChatPageContent() {
   const { user } = useUser();
   const apiClient = useApiClient();
   const searchParams = useSearchParams();
@@ -454,5 +461,19 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      }
+    >
+      <ChatPageContent />
+    </Suspense>
   );
 }
