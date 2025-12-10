@@ -5,57 +5,15 @@ import { useMemo, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { Idea } from '@/components/IdeaCard';
 
-// API base URL - REQUIRED environment variable
-// Development: Set in .env.local as NEXT_PUBLIC_API_URL=http://localhost:8000
-// Production: Set in Cloud Run as environment variable (no rebuild needed)
+// API base URL - defaults to localhost:8000 for development
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_BASE_URL) {
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    const errorMessage = [
-        'MISSING_REQUIRED_ENV_VAR: NEXT_PUBLIC_API_URL is not configured',
-        '',
-        'This environment variable is required for the application to function.',
-        '',
-        isDevelopment
-            ? 'LOCAL DEVELOPMENT SETUP:'
-            : isProduction
-                ? 'PRODUCTION DEPLOYMENT SETUP:'
-                : 'SETUP REQUIRED:',
-        '',
-        isDevelopment
-            ? '1. Create a .env.local file in the project root'
-            : isProduction
-                ? '1. Set NEXT_PUBLIC_API_URL in your deployment platform:'
-                : '1. Set NEXT_PUBLIC_API_URL in your environment:',
-        '',
-        isDevelopment
-            ? '2. Add the following line:'
-            : isProduction
-                ? '   Cloud Run: gcloud run services update <service-name> \\'
-                : '   Add to your environment configuration:',
-        '',
-        isDevelopment
-            ? '   NEXT_PUBLIC_API_URL=http://localhost:8000'
-            : isProduction
-                ? '     --update-env-vars=NEXT_PUBLIC_API_URL=https://your-backend-url.com'
-                : '   NEXT_PUBLIC_API_URL=<your-backend-url>',
-        '',
-        isProduction && '   Docker: Set as environment variable in container',
-        isProduction && '   Kubernetes: Add to ConfigMap or Secret',
-        '',
-        'Current environment:',
-        `  NODE_ENV: ${process.env.NODE_ENV || 'not set'}`,
-        `  NEXT_PUBLIC_API_URL: ${API_BASE_URL || 'undefined'}`,
-    ]
-        .filter(Boolean)
-        .join('\n');
-
-    const error = new Error(errorMessage);
-    (error as Error & { code?: string }).code = 'MISSING_API_URL';
-    throw error;
+    throw new Error(
+        'NEXT_PUBLIC_API_URL is not defined!\n' +
+        'Development: Create .env.local with NEXT_PUBLIC_API_URL=http://localhost:8000\n' +
+        'Production: Set NEXT_PUBLIC_API_URL in Cloud Run environment variables'
+    );
 }
 
 // Create a client-side API wrapper that includes auth tokens
