@@ -1,12 +1,7 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    secretEnv: ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_API_URL"]
     args:
       - "build"
-      - "--build-arg"
-      - "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
-      - "--build-arg"
-      - "NEXT_PUBLIC_API_URL=$$NEXT_PUBLIC_API_URL"
       - "-t"
       - "gcr.io/$PROJECT_ID/originhub-frontend:$COMMIT_SHA"
       - "-t"
@@ -14,13 +9,9 @@ steps:
       - "."
     timeout: "1200s"
 
-availableSecrets:
-  secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/versions/latest
-      env: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
-    - versionName: projects/$PROJECT_ID/secrets/NEXT_PUBLIC_API_URL/versions/latest
-      env: "NEXT_PUBLIC_API_URL"
-    # Note: CLERK_SECRET_KEY should be set as an environment variable in Cloud Run, not here
+# Note: All environment variables should be set in Cloud Run (Variables & Secrets tab)
+# Required: CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, NEXT_PUBLIC_API_URL
+# Optional: NEXT_PUBLIC_CLERK_DOMAIN
 
 images:
   - "gcr.io/$PROJECT_ID/originhub-frontend:$COMMIT_SHA"
