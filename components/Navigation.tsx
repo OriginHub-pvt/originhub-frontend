@@ -14,8 +14,6 @@ export default function Navigation() {
     { href: "/", label: "Home" },
     { href: "/chat", label: "Chat" },
     { href: "/marketplace", label: "Marketplace" },
-    { href: "/explore", label: "Explore" },
-    { href: "/dashboard", label: "Dashboard" },
   ];
 
   return (
