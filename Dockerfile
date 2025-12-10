@@ -34,16 +34,17 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files
-COPY --from=builder /app/public ./public
+# Copy the standalone output (includes server.js and .next/static)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy public folder (needed for static assets like images, favicon, etc.)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Note: Environment variables (CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, etc.)
+# should be set when deploying to Cloud Run, not in the Dockerfile.
+# They will be available at runtime to the Next.js application.
 
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
