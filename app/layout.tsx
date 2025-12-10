@@ -34,8 +34,10 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={publishableKey}
-      // Configure domain for production to avoid certificate errors
-      domain={process.env.NEXT_PUBLIC_CLERK_DOMAIN}
+      // Only set domain if explicitly configured (prevents certificate errors)
+      {...(process.env.NEXT_PUBLIC_CLERK_DOMAIN && {
+        domain: process.env.NEXT_PUBLIC_CLERK_DOMAIN,
+      })}
     >
       <html lang="en" className="scroll-smooth">
         <body
