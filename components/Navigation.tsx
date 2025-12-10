@@ -49,7 +49,7 @@ export default function Navigation() {
               );
             })}
             {isSignedIn ? (
-              <UserButton 
+              <UserButton
                 appearance={{
                   elements: {
                     avatarBox: "h-8 w-8",
@@ -57,7 +57,7 @@ export default function Navigation() {
                 }}
               />
             ) : (
-              <SignInButton mode="modal">
+              <SignInButton>
                 <button className="rounded-lg bg-gradient-to-r from-[#0e3a5f] to-[#14b8a6] px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#14b8a6]/25">
                   Get Started
                 </button>
@@ -111,7 +111,7 @@ export default function Navigation() {
             })}
             {isSignedIn ? (
               <div className="mt-4 flex justify-center">
-                <UserButton 
+                <UserButton
                   appearance={{
                     elements: {
                       avatarBox: "h-8 w-8",
