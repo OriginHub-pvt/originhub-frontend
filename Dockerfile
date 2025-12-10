@@ -1,47 +1,48 @@
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
-
-# Stage 2: Build
+# Build stage
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Accept build arguments for environment variables
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Accept build arguments for NEXT_PUBLIC_* variables (required at build time)
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_API_URL
-ARG CLERK_SECRET_KEY
 
 # Set build-time environment variables
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy the rest of the application
 COPY . .
+
+# Build the application (standalone mode creates .next/standalone directory)
 RUN npm run build
 
-# Stage 3: Production
+# Production stage
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy the standalone output (includes server.js and .next/static)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-# Copy public folder (needed for static assets like images, favicon, etc.)
+# Copy public folder (needed for static assets)
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Note: Environment variables (CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, etc.)
-# should be set when deploying to Cloud Run, not in the Dockerfile.
-# They will be available at runtime to the Next.js application.
+# Note: CLERK_SECRET_KEY should be set in Cloud Run environment variables at runtime
 
 USER nextjs
 
