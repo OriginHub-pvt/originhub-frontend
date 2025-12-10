@@ -1,8 +1,18 @@
 import axios from 'axios';
 import { Idea } from '@/components/IdeaCard';
 
-// API base URL - defaults to localhost:8000 for development
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// API base URL - REQUIRED environment variable
+// Development: Set in .env.local as NEXT_PUBLIC_API_URL=http://localhost:8000
+// Production: Set in Cloud Run as environment variable (no rebuild needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_BASE_URL) {
+    throw new Error(
+        'NEXT_PUBLIC_API_URL is not defined!\n' +
+        'Development: Create .env.local with NEXT_PUBLIC_API_URL=http://localhost:8000\n' +
+        'Production: Set NEXT_PUBLIC_API_URL in Cloud Run environment variables'
+    );
+}
 
 // Create axios instance with default config
 const api = axios.create({
