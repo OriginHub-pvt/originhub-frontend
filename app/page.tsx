@@ -128,9 +128,9 @@ export default function LandingPage() {
           <section className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
             <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-3">
               {[
-                { value: "1,200+", label: "Problems You&apos;ve Searched" },
+                { value: "1,200+", label: "Problems You've Searched" },
                 { value: "500+", label: "Startup Ideas Created" },
-                { value: "300+", label: "Ideas You&apos;re Solving" },
+                { value: "300+", label: "Ideas You're Solving" },
               ].map((stat) => (
                 <div
                   key={stat.value}

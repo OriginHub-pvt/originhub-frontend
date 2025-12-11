@@ -11,7 +11,7 @@ export default function Navigation() {
   const { isSignedIn } = useUser();
 
   const navLinks = [
-    { href: "/", label: "Home" },
+    // { href: "/", label: "Home" },
     { href: "/chat", label: "Chat" },
     { href: "/marketplace", label: "Marketplace" },
   ];
@@ -30,7 +30,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            {navLinks.map((link) => {
+            {isSignedIn && navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
