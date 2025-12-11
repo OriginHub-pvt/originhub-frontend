@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
         ignoreBuildErrors: true,
     },
     // Ensure environment variables are available at runtime
-    env: {
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    },
+    // env: {
+    //     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    //     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    // },
     // Configure headers for better security and CORS
     async headers() {
         return [
