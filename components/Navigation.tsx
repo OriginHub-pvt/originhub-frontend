@@ -12,7 +12,6 @@ export default function Navigation() {
 
   const navLinks = [
     // { href: "/", label: "Home" },
-    { href: "/chat", label: "Chat" },
     { href: "/marketplace", label: "Marketplace" },
   ];
 
