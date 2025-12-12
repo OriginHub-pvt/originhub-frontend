@@ -194,6 +194,124 @@ export const useApiClient = () => {
             return response.data;
         },
 
+        // Send chat message with streaming support
+        sendChatMessageStream: async (
+            message: string,
+            chatId: string | undefined,
+            onToken: (token: string) => void,
+            onComplete: (fullText: string) => void,
+            onError: (error: Error) => void | Promise<void>
+        ) => {
+            const token = await getToken();
+            const requestBody: Record<string, unknown> = { message, stream: true };
+            if (chatId) {
+                requestBody.chat_id = chatId;
+            }
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            if (user?.id) {
+                headers['X-User-Id'] = user.id;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(requestBody),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullText = '';
+
+                if (!reader) {
+                    throw new Error('No response body reader available');
+                }
+
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        break;
+                    }
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.trim() === '') continue;
+
+                        // Handle Server-Sent Events format
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.token) {
+                                    fullText += parsed.token;
+                                    onToken(parsed.token);
+                                } else if (parsed.content) {
+                                    fullText += parsed.content;
+                                    onToken(parsed.content);
+                                } else if (typeof parsed === 'string') {
+                                    fullText += parsed;
+                                    onToken(parsed);
+                                }
+                            } catch {
+                                // If not JSON, treat as plain text
+                                fullText += data;
+                                onToken(data);
+                            }
+                        } else if (line.startsWith('{')) {
+                            // Try to parse as JSON
+                            try {
+                                const parsed = JSON.parse(line);
+                                if (parsed.token) {
+                                    fullText += parsed.token;
+                                    onToken(parsed.token);
+                                } else if (parsed.content) {
+                                    fullText += parsed.content;
+                                    onToken(parsed.content);
+                                }
+                            } catch {
+                                // If not valid JSON, treat as plain text
+                                fullText += line;
+                                onToken(line);
+                            }
+                        } else {
+                            // Plain text chunk
+                            fullText += line;
+                            onToken(line);
+                        }
+                    }
+                }
+
+                // Process any remaining buffer
+                if (buffer.trim()) {
+                    fullText += buffer;
+                    onToken(buffer);
+                }
+
+                onComplete(fullText);
+            } catch (error) {
+                const errorResult = onError(error instanceof Error ? error : new Error('Streaming error'));
+                // If onError returns a promise, await it
+                if (errorResult instanceof Promise) {
+                    await errorResult;
+                }
+            }
+        },
+
         // Get chat history
         getChatHistory: async () => {
             // X-User-Id header is automatically added by the request interceptor
@@ -286,6 +404,15 @@ export const useApiClient = () => {
         deleteComment: async (ideaId: string, commentId: string) => {
             // X-User-Id header is automatically added by the request interceptor
             const response = await api.delete(`/ideas/${ideaId}/comments/${commentId}`);
+            return response.data;
+        },
+
+        // Convert chat to idea
+        convertChatToIdea: async (chatId: string) => {
+            // X-User-Id header is automatically added by the request interceptor
+            const response = await api.post('/chat/convert-to-idea', {
+                chat_id: chatId,
+            });
             return response.data;
         },
     }), [api, user]);
