@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: originhub-frontend
+  namespace: originhub-frontend
+  labels:
+    app: originhub-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: originhub-frontend
+  template:
+    metadata:
+      labels:
+        app: originhub-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <your docker image here>
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: PORT
+              value: "3000"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: NODE_ENV
+              value: "production"
+            - name: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+              value: "<your clerk publishable key here>"
+            - name: CLERK_SECRET_KEY
+              value: "<your clerk secret key here>"
+            - name: NEXT_PUBLIC_API_URL
+              value: "<your api url here>"
+            - name: CLERK_PUBLISHABLE_KEY
+              value: "<your clerk publishable key here>"
+            - name: NEXT_PUBLIC_CLERK_FRONTEND_API
+              value: "<your clerk frontend api here>"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1000Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: originhub-frontend
+  namespace: originhub-frontend
+  labels:
+    app: originhub-frontend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: originhub-frontend
