@@ -12,7 +12,8 @@
 
 # testing
 /coverage
-
+k8s/deployment-prod.yaml
+k8s/frontend-ingress-prod.yaml
 # next.js
 /.next/
 /out/
